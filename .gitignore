@@ -1,0 +1,11 @@
+*.gem
+*.log
+
+.bundle/
+coverage/
+pkg/
+spec/examples.txt
+spec/dummy/log/*
+spec/dummy/tmp/*
+tmp/*
+*.sqlite3

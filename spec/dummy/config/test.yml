@@ -1,0 +1,5 @@
+shared:
+  thing: true
+
+test:
+  another_thing: false
