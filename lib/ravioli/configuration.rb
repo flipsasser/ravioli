@@ -19,20 +19,13 @@ module Ravioli
       other == to_hash
     end
 
-    def []=(*args)
-      avoid_write_lock!
-      super
-    end
-
     def append(attributes = {})
-      avoid_write_lock!
       attributes.each do |key, value|
         key = key.to_s
         if value.is_a?(Hash)
           original_value = self[key]
-          merged_value = original_value.is_a?(self.class) ? original_value.to_hash.deep_merge(value) : value
-          credential_value = build(key, merged_value)
-          self[key] = credential_value
+          value = original_value.table.deep_merge(value.deep_symbolize_keys) if original_value.is_a?(self.class)
+          self[key] = build(key, value)
         else
           self[key] = fetch_env_key_for(key) { value }
         end
@@ -59,10 +52,6 @@ module Ravioli
       dig(*keys) || yield
     end
 
-    def lock!
-      @locked = true
-    end
-
     def pretty_print(printer = nil)
       pretty = to_hash.pretty_print(printer)
       if key_path.present?
@@ -77,10 +66,10 @@ module Ravioli
     end
 
     def to_hash
-      if @locked
-        @_to_hash ||= _ravioli_to_hash
+      if !@modifiable
+        @_to_hash ||= table.except(:key_path)
       else
-        _ravioli_to_hash
+        table.except(:key_path)
       end
     end
     alias as_hash to_hash
@@ -88,18 +77,10 @@ module Ravioli
 
     private
 
-    def _ravioli_to_hash
-      (@table || {}).with_indifferent_access.except(:key_path)
-    end
-
-    def avoid_write_lock!
-      raise ReadOnlyError.new if @locked
-    end
-
     def build(keys, attributes = {})
       attributes[:key_path] = key_path_for(keys)
       child = self.class.new(attributes)
-      child.lock! if @locked
+      child.freeze if @locked
       child
     end
 
@@ -115,14 +96,8 @@ module Ravioli
     # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(missing_method, *args, &block)
-      method = missing_method.to_s
-      if args.empty?
-        result = self[method.chomp("?")]
-        return method.ends_with?("?") ? result.present? : result
-      elsif args.one? && method.ends_with?("=")
-        avoid_write_lock!
-      end
-
+      # Return proper booleans from query methods
+      return super.present? if args.empty? && missing_method.to_s.ends_with?("?")
       super
     end
     # rubocop:enable Style/MissingRespondToMissing
@@ -130,5 +105,4 @@ module Ravioli
   end
 
   class KeyMissingError < StandardError; end
-  class ReadOnlyError < StandardError; end
 end

@@ -73,21 +73,21 @@ RSpec.describe Ravioli::Configuration do
     end
   end
 
-  describe "#lock!" do
+  describe "#freeze" do
     before do
-      configuration.lock!
+      configuration.freeze
     end
 
     it "prevents `append` actions" do
-      expect { configuration.append(foo: :bar) }.to raise_error(Ravioli::ReadOnlyError)
+      expect { configuration.append(foo: :bar) }.to raise_error(FrozenError)
     end
 
     it "prevents direct assignment" do
-      expect { configuration.foo = :bar }.to raise_error(Ravioli::ReadOnlyError)
+      expect { configuration.foo = :bar }.to raise_error(FrozenError)
     end
 
     it "prevents hash-style assigment" do
-      expect { configuration[:foo] = :bar }.to raise_error(Ravioli::ReadOnlyError)
+      expect { configuration[:foo] = :bar }.to raise_error(FrozenError)
     end
   end
 

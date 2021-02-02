@@ -51,8 +51,7 @@ module Ravioli
 
     # When the builder is done working, lock the configuration and return it
     def build!
-      configuration.lock!
-      configuration
+      configuration.freeze
     end
 
     # Load a config file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
@@ -74,9 +73,7 @@ module Ravioli
     attr_reader :configuration
 
     def extract_environmental_config(config)
-      # Make the config universally usable and check if it's keyed by environment - if not, just
-      # return it as-is
-      config = config.deep_transform_keys { |key| key.to_s.underscore.to_sym }
+      # Check if the config hash is keyed by environment - if not, just return it as-is
       return config unless (config.keys & %i[development production shared staging test]).any?
 
       # Combine environmental config in the following order:
@@ -86,7 +83,7 @@ module Ravioli
       environments = [:shared, Rails.env.to_sym]
       environments.push(:staging) if configuration.staging?
       config.values_at(*environments).inject({}) { |final_config, environment_config|
-        final_config.deep_merge(environment_config || {})
+        final_config.deep_merge((environment_config || {}).deep_symbolize_keys)
       }
     end
 
@@ -109,6 +106,7 @@ module Ravioli
       else
         raise "#{Ravioli::NAME} doesn't know how to parse a file"
       end
+      parsed_file = extract_environmental_config(parsed_file)
 
       name = File.basename(path, File.extname(path))
       name = File.dirname(path).split(Pathname::SEPARATOR_PAT).last if name == "config"
@@ -126,7 +124,7 @@ module Ravioli
       options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
 
       credentials = Rails.application.encrypted("config/#{path}.yml.enc", options)&.config || {}
-      credentials.symbolize_keys
+      credentials
     rescue => error
       warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error
       {}
@@ -134,16 +132,14 @@ module Ravioli
 
     def parse_json_config_file(path)
       contents = File.read(path)
-      config = JSON.parse(contents)
-      extract_environmental_config(config)
+      JSON.parse(contents).deep_transform_keys { |key| key.to_s.underscore.to_sym }
     end
 
     def parse_yaml_config_file(path)
       require "erb"
       contents = File.read(path)
       erb = ERB.new(contents).tap { |renderer| renderer.filename = path.to_s }
-      config = YAML.safe_load(erb.result, aliases: true)
-      extract_environmental_config(config)
+      YAML.safe_load(erb.result, aliases: true)
     end
 
     def path_to_config_file_path(path, extnames: EXTNAMES, quiet: false)
