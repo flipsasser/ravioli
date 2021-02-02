@@ -40,13 +40,13 @@ module Ravioli
     # Load config/credentials**/*.yml.enc files (assuming we can find a key)
     def auto_load_credentials!
       # Load the base config
-      load_credentials(key_path: "master", env_name: "base")
+      load_credentials(key_path: "config/master.key", env_name: "base")
 
       # Load any environment-specific configuration on top of it
-      load_credentials("credentials/#{Rails.env}", env_name: "master")
+      load_credentials("config/credentials/#{Rails.env}", key_path: "config/credentials/#{Rails.env}.key", env_name: "master")
 
       # Apply staging configuration on top of THAT, if need be
-      load_credentials("credentials/staging") if configuration.staging?
+      load_credentials("config/credentials/staging", key_path: "config/credentials/staging.key") if configuration.staging?
     end
 
     # When the builder is done working, lock the configuration and return it
@@ -64,14 +64,12 @@ module Ravioli
     # Load secure credentials using a key either from a file or the ENV
     def load_credentials(path = "credentials", key_path: path, env_name: path.split("/").last)
       credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
-      puts "Loading credentials:"
-      pp credentials
       configuration.append(credentials) if credentials.present?
     end
 
     private
 
-    EXTNAMES = %w[.yml .yaml .json].freeze
+    EXTNAMES = %w[yml yaml json].freeze
 
     attr_reader :configuration
 
@@ -113,9 +111,9 @@ module Ravioli
       end
 
       name = File.basename(path, File.extname(path))
-      name = File.dirname(path) if name == "config"
+      name = File.dirname(path).split(Pathname::SEPARATOR_PAT).last if name == "config"
       {name => parsed_file}
-    rescue RuntimeError => error
+    rescue => error
       warn "Could not load config file #{path}", error
       {}
     end
@@ -123,13 +121,14 @@ module Ravioli
     def parse_credentials(path, key_path: path, env_name: path.split("/").last)
       env_name = env_name.to_s
       env_name = "RAILS_#{env_name.upcase}_KEY" unless env_name.upcase == env_name
-      options = {key_path: "config/#{key_path}.key"}
+      key_path = path_to_config_file_path(key_path, extnames: "key", quiet: true)
+      options = {key_path: key_path}
       options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
 
       credentials = Rails.application.encrypted("config/#{path}.yml.enc", options)&.config || {}
       credentials.symbolize_keys
-    rescue ActiveSupport::MessageEncryptor::InvalidMessage => error
-      warn "Invalid key for `#{env_name}'; could not load credentials at config/#{path}.yml.enc with key file config/#{key_path}.key or ENV key #{env_name}", error
+    rescue => error
+      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error
       {}
     end
 
@@ -143,21 +142,21 @@ module Ravioli
       require "erb"
       contents = File.read(path)
       erb = ERB.new(contents).tap { |renderer| renderer.filename = path.to_s }
-      config = YAML.safe_load(erb.result)
+      config = YAML.safe_load(erb.result, aliases: true)
       extract_environmental_config(config)
     end
 
-    def path_to_config_file_path(path)
+    def path_to_config_file_path(path, extnames: EXTNAMES, quiet: false)
+      original_path = path.dup
       unless path.is_a?(Pathname)
         path = path.to_s
         path = path.match?(Pathname::SEPARATOR_PAT) ? Pathname.new(path) : Pathname.new("config").join(path)
       end
       path = Rails.root.join(path) unless path.absolute?
-      path = path.expand_path
 
       if path.extname.blank?
-        EXTNAMES.each do |extname|
-          other_path = path.sub_ext(extname)
+        Array(extnames).each do |extname|
+          other_path = path.sub_ext(".#{extname}")
           if other_path.exist?
             path = other_path
             break
@@ -165,13 +164,14 @@ module Ravioli
         end
       end
 
-      raise "Could not load a configuration file at #{path}" unless path.exist?
+      warn "Could not resolve a configuration file at #{original_path.inspect}" unless quiet || path.exist?
 
       path
     end
 
-    def warn(message, error)
-      message = "[#{Ravioli::NAME}] #{message}:\n\n#{error.cause.inspect}"
+    def warn(message, error = $!)
+      message = "[#{Ravioli::NAME}] #{message}"
+      message = "#{message}:\n\n#{error.cause.inspect}" if error&.cause.present?
       if @strict
         raise BuildError.new(message, error)
       else

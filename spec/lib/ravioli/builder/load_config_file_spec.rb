@@ -88,57 +88,23 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 end
 
-RSpec.describe Ravioli::Builder do
+RSpec.describe Ravioli::Builder, "#load_config_file" do
   let(:builder) { described_class.new(strict: true) }
   let(:configuration) { builder.build! }
 
-  describe "#add_staging_flag!" do
-    it "doesn't return `true` if Rails.env is not 'production'" do
-      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("test")).at_most(10000).times
-      ENV["STAGING"] = "1"
-      builder.add_staging_flag!
-      expect(configuration.staging?).to eq(false)
-      expect(Rails.env.staging?).to eq(false)
-    end
-
-    it "doesn't return `true` if ENV['STAGING'] is not set" do
-      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")).at_most(10000).times
-      ENV["STAGING"] = nil
-      builder.add_staging_flag!
-      expect(configuration.staging?).to eq(false)
-      expect(Rails.env.staging?).to eq(false)
-    end
-
-    it "returns `true` if ENV['STAGING'] is set and Rails.env is 'production'" do
-      allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("production")).at_most(10000).times
-      ENV["STAGING"] = "1"
-      builder.add_staging_flag!
-      expect(configuration.staging?).to eq(true)
-      expect(Rails.env.staging?).to eq(true)
+  describe "with a non-existent file" do
+    it "warns the user when not in strict mode" do
+      expect {
+        builder.load_config_file("nothing.json")
+      }.to raise_error(Ravioli::BuildError)
     end
   end
 
-  describe "#load_config_file" do
-    describe "with a non-existent file" do
-      it "warns the user when not in strict mode" do
-        expect {
-          builder.load_config_file("nothing.json")
-        }.to raise_error(Ravioli::BuildError)
-      end
-    end
-
-    describe "with YAML files" do
-      include_context :parses_various_inputs, :yml
-    end
-
-    describe "with JSON files" do
-      include_context :parses_various_inputs, :json
-    end
+  describe "with YAML files" do
+    include_context :parses_various_inputs, :yml
   end
 
-  describe "#load_credentials" do
-    describe "with a non-existent credential file" do
-
-    end
+  describe "with JSON files" do
+    include_context :parses_various_inputs, :json
   end
 end

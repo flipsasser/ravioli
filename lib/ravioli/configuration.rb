@@ -34,23 +34,15 @@ module Ravioli
           credential_value = build(key, merged_value)
           self[key] = credential_value
         else
-          self[key] = value
+          self[key] = fetch_env_key_for(key) { value }
         end
       end
     end
 
-    def build(keys, attributes = {})
-      attributes[:key_path] = Array(key_path) + Array(keys)
-      child = self.class.new(attributes)
-      child.lock! if @locked
-      child
-    end
-
     def dig(*keys, safe: false)
       return safe(*keys) if safe
-      # env_keys = root_key.present? && env_keys.first.to_s == root_key.to_s ? keys[-1..1] : keys
-      env_key = keys.join("_").upcase
-      ENV.fetch(env_key) do
+
+      fetch_env_key_for(keys) do
         value = self
         keys.each do |key|
           value = value[key.to_s]
@@ -73,9 +65,14 @@ module Ravioli
       @locked = true
     end
 
-    # def pretty_print(printer = nil)
-    #   to_hash.pretty_print(printer)
-    # end
+    def pretty_print(printer = nil)
+      pretty = to_hash.pretty_print(printer)
+      if key_path.present?
+        pretty
+      else
+        "#<#{self.class.name} #{pretty}>"
+      end
+    end
 
     def safe(*keys)
       fetch(*keys) { build(keys) }
@@ -89,6 +86,7 @@ module Ravioli
       end
     end
     alias as_hash to_hash
+    alias as_json to_hash
 
     private
 
@@ -98,6 +96,22 @@ module Ravioli
 
     def avoid_write_lock!
       raise ReadOnlyError.new if @locked
+    end
+
+    def build(keys, attributes = {})
+      attributes[:key_path] = key_path_for(keys)
+      child = self.class.new(attributes)
+      child.lock! if @locked
+      child
+    end
+
+    def fetch_env_key_for(keys, &block)
+      env_key = key_path_for(keys).join("_").upcase
+      ENV.fetch(env_key, &block)
+    end
+
+    def key_path_for(keys)
+      Array(key_path) + Array(keys)
     end
 
     # rubocop:disable Style/MethodMissingSuper

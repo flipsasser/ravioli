@@ -12,9 +12,9 @@ module Ravioli
   NAME = "Ravioli"
 
   class << self
-    def build(namespace: nil, &block)
+    def build(class_name: "Configuration", namespace: nil, strict: false, &block)
       require_relative "ravioli/builder"
-      builder = Builder.new(namespace: namespace)
+      builder = Builder.new(class_name: class_name, namespace: namespace, strict: strict)
       yield builder if block_given?
       instances.push(builder.build!)
     end

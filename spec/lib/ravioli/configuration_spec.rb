@@ -4,7 +4,8 @@ require "spec_helper"
 require "ravioli/configuration"
 
 RSpec.describe Ravioli::Configuration do
-  let(:configuration) { described_class.new(thing: {other_thing: {third_thing: true}}) }
+  let(:settings) { {thing: {other_thing: {third_thing: true}}} }
+  let(:configuration) { described_class.new(settings) }
 
   describe "#==" do
     it "returns `true` for configurations with equivalent hashes" do
@@ -99,6 +100,42 @@ RSpec.describe Ravioli::Configuration do
       dug = configuration.safe(:non, :existant, :thing)
       expect(dug).to be_instance_of(described_class)
       expect(dug).to eq({})
+    end
+  end
+
+  describe "when environmental overrides are present" do
+    around do |example|
+      ENV["THING_OTHER_THING_THIRD_THING"] = nil
+      example.run
+      ENV["THING_OTHER_THING_THIRD_THING"] = nil
+    end
+
+    describe "#dig" do
+      it "returns the ENV override from a root-level config" do
+        expect {
+          ENV["THING_OTHER_THING_THIRD_THING"] = "false"
+        }.to change {
+          configuration.dig(:thing, :other_thing, :third_thing)
+        }.from(true).to("false")
+      end
+
+      it "returns the ENV override from a child config" do
+        expect {
+          ENV["THING_OTHER_THING_THIRD_THING"] = "false"
+        }.to change {
+          configuration.thing.dig(:other_thing, :third_thing)
+        }.from(true).to("false")
+      end
+    end
+
+    describe "direct accessors" do
+      it "return the ENV override from the accessor" do
+        expect {
+          ENV["THING_OTHER_THING_THIRD_THING"] = "false"
+        }.to change {
+          described_class.new(settings).thing.other_thing.third_thing
+        }.from(true).to("false")
+      end
     end
   end
 end

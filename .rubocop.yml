@@ -44,6 +44,14 @@ Rails/SkipsModelValidations:
   Exclude:
     - spec/**/*
 
+Rails/UnknownEnv:
+  Enabled: true
+  Environments:
+    - development
+    - test
+    - production
+    - staging
+
 RSpec/Dialect:
   Enabled: true
   PreferredMethods:
