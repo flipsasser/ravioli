@@ -3,3 +3,6 @@ shared:
 
 test:
   another_thing: false
+
+development:
+  another_thing: true

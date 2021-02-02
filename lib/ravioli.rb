@@ -1,24 +1,32 @@
 # frozen_string_literal: true
 
-require "pry" # TODO: Remove
-require "active_support"
-require "ostruct"
-require "ravioli/class_methods"
-require "ravioli/instance_methods"
-require "ravioli/version"
+require "active_support/all"
 
+# These are the basic building blocks of Ravioli
+require_relative "ravioli/configuration"
+require_relative "ravioli/version"
+
+# The top-level Ravioli module contains helper methods for building configuration instances and
+# accessing them, as well as the various classes that it relies on to build stuff
 module Ravioli
-  def self.build(root_key: :app, &block)
-    ravioli = Class.new(OpenStruct) {
-      extend Ravioli::ClassMethods
-      include Ravioli::InstanceMethods
+  NAME = "Ravioli"
 
-      cattr_accessor :root_key
-    }
-    ravioli.root_key = root_key
-    ravioli.instance_eval(&block) if block_given?
-    ravioli
+  class << self
+    def build(namespace: nil, &block)
+      require_relative "ravioli/builder"
+      builder = Builder.new(namespace: namespace)
+      yield builder if block_given?
+      instances.push(builder.build!)
+    end
+
+    def default
+      instances.first
+    end
+
+    def instances
+      @instances ||= []
+    end
   end
 end
 
-require "ravioli/engine" if defined? Rails
+require_relative "ravioli/engine" if defined?(Rails)

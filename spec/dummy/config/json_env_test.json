@@ -1,0 +1,8 @@
+{
+  "shared": {
+    "whatever": true
+  },
+  "test": {
+    "somethingElse": true
+  }
+}

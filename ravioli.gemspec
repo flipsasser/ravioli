@@ -41,5 +41,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "standard", "~> 0.4"
-  spec.add_development_dependency "timecop"
 end

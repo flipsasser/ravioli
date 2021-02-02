@@ -1,0 +1,16 @@
+{
+  "shared": {
+    "things": [
+      {
+        "whatever": false
+      }
+    ]
+  },
+  "development": {
+    "things": [
+      {
+        "whatever": true
+      }
+    ]
+  }
+}

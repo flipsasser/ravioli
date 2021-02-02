@@ -9,7 +9,6 @@ require "rspec"
 
 # Load up RSpec support files
 require "pry"
-require "timecop"
 Dir[File.expand_path("../support/**/*.rb", __FILE__)].sort.each { |f| require f }
 
 RSpec.configure do |config|

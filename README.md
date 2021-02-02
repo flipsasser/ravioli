@@ -1,27 +1,19 @@
 # Ravioli 🍝
 
-**Grab a fork and twist all your configuration spaghetti into a single, delicious bundle!**
+**Grab a fork and twist your configuration spaghetti in a single, delicious dumpling!**
 
-Ravioli combines all of your app's runtime configuration into a unified, simple interface. **It automatically loads and combines YAML config files, encrypted Rails credentials, and ENV vars** so you can focus on writing code and not on where configuration comes from.
+Ravioli combines all of your app's runtime configuration into a unified, simple interface. **It combines YAML or JSON configuration files, encrypted Rails credentials, and ENV vars into one easy-to-consume interface** so you can focus on writing code and not on where configuration comes from.
 
 **Ravioli turns this...**
 
 ```ruby
-def do_something_with_a_remote_api
-  APIClient.do_stuff(
-    api_key: ENV.fetch("THING_API_KEY") { Rails.credentials.thing_api_key || raise("I need an API key for thing to work") }
-  )
-end
+key = ENV.fetch("THING_API_KEY") { Rails.credentials.thing&["api_key"] || raise("I need an API key for thing to work") }
 ```
 
 **...into this:**
 
 ```ruby
-def do_something_with_a_remote_api
-  APIClient.do_stuff(
-    api_key: Config.dig!(:thing, :api_key)
-  )
-end
+key = Rails.config.dig!(:thing, :api_key)
 ```
 
 <!--**FYI** Ravioli is two libraries: the Rails gem and an NPM package. This README focuses on the Ruby gem. You can also [read the JavaScript documentation](blob/master/src/README.md) for specifics about how to use Ravioli either in the Rails asset pipeline or in a standalone Node server context.
@@ -30,8 +22,12 @@ end
 
 1. [Installation](#installation)
 2. [Usage](#usage)
-3. [Automatic Setup](#automatic-setup)
-4. [Manual Setup](#manual-setup)
+ 	- Direct accessors
+ 	- Safe key-path traversal
+ 	- `ENV` variables and precedence
+3. [Automatic Configuration](#automatic-configuration)
+4. [Manual Configuration](#manual-configuration)
+	- [Rails.config vs. constants](#setup-in-rails-config-vs-constants)
 5. [How ENV vars work](#how-env-vars-work)
 6. [License](#license)
 <!-- 5. [JavaScript library](#javascript-library) -->
@@ -40,11 +36,162 @@ end
 
 <!--Ravioli comes as a Ruby gem or an NPM package; they work marginally differently. Let's focus on Ruby/Rails for now.
 -->
-1. Add `gem "ravioli"` to your `Gemfile`
-2. Run `bundle`
-3. Eat some pasta
+1. YOLO `gem "ravioli"` into your `Gemfile`
+2. YOLO `bundle install`
+3. (Optionally) YOLO an initializer: `rails generate ravioli:install` (Ravioli will do everything automatically for you if you skip this step, because I aim to *please*)
+
+<!--### Setup in `Rails.config` vs. constants
+
+You can choose where your Ravioli lives: under `Rails.config` (this is the default behavior), in a constant (e.g. `Config` or `App`), or somewhere else entirely (you could, for example, define a `Config` module, mix it in to your classes where it's needed, and access it via a `config` instance method).
+
+**All of the examples in this README will use `Rails.config`.** My personal preference is to not pollute the global namespace, but your approach is entirely up to you. It's worth noting that the `Rails.config` route pretty much immediately violates the Law of Demeter, which is gross. The alternative is having a God object constant - also gross. Hopefully that helps explain why this library is so choose-your-own-adventure-y.-->
 
 ## Usage
+
+For the following examples, we'll use the following configuration structure*:
+
+```yaml
+host: "example.com"
+url: "https://www.example.com"
+sender: "reply-welcome@example.com"
+
+database:
+  host: "localhost"
+  port: "5432"
+
+sendgrid:
+  api_key: "12345"
+
+sentry:
+  api_key: "12345"
+  environment: <%= Rails.env %>
+  dsn: "https://sentry.io/whatever?api_key=12345"
+```
+
+<small>*this structure is the end result of Ravioli's loading process; it has nothing to do with filesystem organization or config file layout. We'll talk about that in a sec, so just slow your roll about loading up config files until then, my good friend.</small>
+
+### Accessing configuration values directly
+
+Ravioli objects support direct accessors:
+
+```ruby
+Rails.config.host #=> "example.com"
+Rails.config.database.port #=> "5432"
+Rails.config.not.here #=> NoMethodError (undefined method `here' for nil:NilClass)
+```
+
+### Accessing configuration values safely by key path
+
+#### Traversing the keypath with `dig`
+
+You can traverse deeply nested config values safely with `dig`:
+
+```ruby
+Rails.config.dig(:database, :port) #=> "5432"
+Rails.config.dig(:not, :here) #=> nil
+```
+
+This works the same in principle as the [`dig`](https://ruby-doc.org/core-2.7.2/Hash.html#method-i-dig) method on `Hash` objects, with the added benefit of not caring about key type (both symbols and strings are accepted).
+
+#### Providing fallback values with `fetch`
+
+You can provide a sane fallback value using `fetch`, which works like `dig` but accepts a block:
+
+```ruby
+Rails.config.fetch(:database, :port) { "5678" } #=> "5432" is returned from the config
+Rails.config.fetch(:not, :here) { "PRESENT!" } #=> "PRESENT!" is returned from the block
+```
+
+**Note that `fetch` accepts multiple keys as arguments**, and does not provide for a `default` fallback argument - instead, the fallback _must_ appear inside of a block. This is a slight difference from the [`fetch`](https://ruby-doc.org/core-2.7.2/Hash.html#method-i-fetch) method on `Hash` objects.
+
+#### Requiring configuration values with `dig!`
+
+If a part of your app cannot operate without a configuration value, e.g. an API key is required to make an API call, you can use `dig!`, which behaves identically to `dig` except it will raise a `KeyMissingError` if no value is specified:
+
+```ruby
+uri = URI("https://api.example.com/things/1")
+request = Net::HTTP::Get.new(uri)
+request["X-Example-API-Key"] = Rails.config.dig!(:example, :api_key) #=> Ravioli::KeyMissingError (could not find configuration value at key path [:example, :api_key])
+```
+
+#### Ensuring you receive a config object with `safe` (or `dig(*keys, safe: true)`)
+
+If you want to make sure you are operating on a configuration object, even if it has not been set for your environment, you can provide `dig` a `safe: true` flag:
+
+```ruby
+Rails.config.dig(:google) #=> nil
+Rails.config.safe(:google) #=> Config<{}>
+Rails.config.dig(:google, safe: true) #=> Config<{}>
+```
+
+Use `safe` when, for example, you don't want your code to explode because a root config key is not set. Here's an example:
+
+```ruby
+class GoogleMapsClient
+  include HTTParty
+
+  google = Rails.config.safe(:google)
+  headers "Auth-Token" => google.token, "Other-Header" => google.other_thing
+  base_uri google.fetch(:base_uri) { "https://api.google.com/maps-do-stuff-cool-right" }
+end
+```
+
+
+### `ENV` variables and precedence
+
+`ENV` variables take precedence over loaded configuration files. When examining your configuration, Ravioli checks for a capitalized `ENV` variable corresponding to the keypath you're searching. Thus `Rails.config.dig(:database, :url)` is equivalent to `ENV.fetch("DATABASE_URL") { Rails.config.database&.url }`. 
+
+Configuration values take precedence in the order they are applied. For example, if you load two config files defining `host`, the latest one will overwrite the earlier one's value.
+
+<!--### Advanced configuration
+
+#### The root key and top-level configuration
+
+Most applications have top-level configuration, e.g. the user-facing name of the app, a host URL, etc. So while it makes sense to keep your Sendgrid credentials centralized in `Rails.config.sendgrid`, you probably don't want to access your host URL with `Rails.config.app.host` - `Rails.config.host` is preferable.
+
+Similarly, who wants to define their `ENV` vars as, for example, `ENV['APP_HOST']`? Most folks just use `ENV['HOST']`.
+
+In order to avoid confusion, you can define a `root_key` on your top-level configuration. By default this is `app` but it can be whatever you prefer. From that point on, accessors like `Rails.config.dig(:app, :host)` will return-->
+
+
+## Automatic Configuration
+
+The fastest way to use Ravioli is via automatic configuration, bootstrapping it into the `Rails.config` attribute. This is the default experience when you `require "ravioli"`, either explicitly through an initializer or implicitly through `gem "ravioli"` in your Gemfile.
+
+The automatic configuration is equivalent to the following:
+
+1. Load all `.yml` and `.json` files in `config/` EXCEPT locales
+2. Load encrypted credentials files ([see Encryped Credentials" for details](#encrypted-credentials))
+3. Set a `staging?` flag to `Rails.env.production? && ENV["STAGING"]`
+
+It looks like this:
+
+```ruby
+def Rails.config
+  @_ravioli_config ||= Ravioli.build { |config|
+    config.auto_load_config_files
+    config.auto_load_credential_files
+    config[:staging?] = Rails.env.production? && ENV["STAGING"].present?
+    Rails.env.class_eval "def staging?; true; end" if config.staging?
+  }
+end
+```
+
+## Manual configuration using `Ravioli.build`
+
+You can manually defined your configuration in an initializer if you don't want the automatic configuration assumptions to step on any toes.
+
+### Defining a central constant e.g. `App`
+
+`Ravioli.build` returns an instance of a configuration.
+
+### Loading credentials
+
+### Loading config files
+
+## Usage
+
+### Manual configuration
 
 For the following examples, imagine a file in `config/sentry.yml`:
 
@@ -59,55 +206,6 @@ production:
 
 staging:
   environment: "staging"
-```
-
-### Direct access
-
-Call accessors on your app's configuration object:
-
-```ruby
-Config.sentry.dsn #=> "https://noop"
-```
-
-### Programatically using `dig` and `fetch`
-
-`dig` works identically to [`dig`](https://ruby-doc.org/core-2.7.2/Hash.html#method-i-dig) and `fetch` works _similarly_ to [`fetch`](https://ruby-doc.org/core-2.7.2/Hash.html#method-i-fetch) on Hash objects:
-
-```ruby
-Config.dig(:sentry, :environment) #=> "development"
-Config.fetch(:sentry, :no_key) { "fallback" } #=> "fallback"
-```
-
-**Note that the `fetch` implementation accepts multiple keys as arguments**, and does not provide for a `default` fallback argument - instead, the fallback _must_ appear inside of a block.
-
-### Require a value using `dig!`
-
-If you want to prevent code from executing absent a configuration value, use `dig!`:
-
-```ruby
-Config.dig!(:sentry, :no_key) #=> raises Config::MissingKeyError
-```
-
-### Ensuring you receive a config object with `safe` (or `dig(*keys, safe:true)`)
-
-If you want to make sure you are operating on a configuration object, even if it has not been set for your environment, you can provide `dig` a `safe: true` flag which will effectively do the following:
-
-```ruby
-Config.dig(:google) #=> nil
-Config.safe(:google) #=> Config<{}>
-Config.dig(:google, safe: true) #=> Config<{}>
-```
-
-Use `safe` when, for example, you don't want your code to explode because a config key is not set. Here's an example:
-
-```ruby
-class GoogleMapsClient
-  include HTTParty
-
-  google = Config.safe(:google)
-  headers "Auth-Token" => google.token, "Other-Header" => google.other_thing
-  base_uri google.base_uri
-end
 ```
 
 ## Automatic Setup
@@ -307,4 +405,4 @@ end
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+Ravioli is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
