@@ -3,6 +3,7 @@ import deepmerge from "deepmerge"
 import { existsSync, readFileSync } from "fs"
 import { load as loadYAML } from "js-yaml"
 import { resolve } from "path"
+import YAML from "yaml"
 
 interface LoadOptions {
   envKey?: string
@@ -10,7 +11,7 @@ interface LoadOptions {
 }
 
 function resolveCredentialPath(path: string) {
-  return resolve(__dirname, "../../../..", path)
+  return resolve(process.cwd(), path)
 }
 
 function loadCredentials(file: string, options: LoadOptions): any {
@@ -68,7 +69,7 @@ function loadCredentials(file: string, options: LoadOptions): any {
   decrypted = decrypted.slice(0, length)
 
   // Neato - parse the YAML
-  return loadYAML(decrypted.toString()) || {}
+  return YAML.parse(decrypted.toString()) || {}
 }
 
 interface BuildCombinatorOptions {

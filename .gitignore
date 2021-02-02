@@ -8,4 +8,5 @@ pkg/
 spec/dummy/log/*
 spec/dummy/tmp/*
 spec/examples.txt
+src/*.js
 tmp/*
