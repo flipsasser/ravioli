@@ -6,7 +6,7 @@ module Ravioli
 
     def self.bootstrap_config
       unless Ravioli.default
-        Ravioli.build(namespace: Rails.application&.class&.module_parent) do |config|
+        Ravioli.build(namespace: Rails.application&.class&.module_parent, strict: Rails.env.production?) do |config|
           config.add_staging_flag!
           config.auto_load_config_files!
           config.auto_load_credentials!
@@ -17,7 +17,7 @@ module Ravioli
     end
 
     # Bootstrap Ravioli onto the Rails app
-    initializer "farts" do |app|
+    initializer "ravioli" do |app|
       self.class.bootstrap_config
     end
   end

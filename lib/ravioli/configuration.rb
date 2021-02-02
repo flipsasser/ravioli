@@ -102,10 +102,10 @@ module Ravioli
 
     # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
-    def method_missing(method, *args, &block)
-      method = method.to_s
+    def method_missing(missing_method, *args, &block)
+      method = missing_method.to_s
       if args.empty?
-        result = super method.chomp("?")
+        result = self[method.chomp("?")]
         return method.ends_with?("?") ? result.present? : result
       elsif args.one? && method.ends_with?("=")
         avoid_write_lock!

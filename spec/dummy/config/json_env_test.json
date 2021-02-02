@@ -1,8 +1,11 @@
 {
   "shared": {
-    "whatever": true
+    "thing": true
+  },
+  "development": {
+    "anotherThing": true
   },
   "test": {
-    "somethingElse": true
+    "anotherThing": false
   }
 }
