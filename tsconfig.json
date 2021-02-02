@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "baseUrl": "./src/",
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noImplicitUseStrict": true,
+    "strictBindCallApply": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*/node_modules"
+  ]
+}

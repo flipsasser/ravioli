@@ -1,11 +1,11 @@
 *.gem
 *.log
-
+*.sqlite3
 .bundle/
 coverage/
+node_modules
 pkg/
-spec/examples.txt
 spec/dummy/log/*
 spec/dummy/tmp/*
+spec/examples.txt
 tmp/*
-*.sqlite3
