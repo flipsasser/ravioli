@@ -5,30 +5,22 @@ require "ostruct"
 
 module Ravioli
   class Configuration < OpenStruct
-    attr_accessor :key_path
+    attr_reader :key_path
 
     def initialize(attributes = {})
       super({})
-      self.key_path = attributes.delete(:key_path)
+      @key_path = attributes.delete(:key_path)
       append(attributes)
     end
 
-    def ==(other)
-      other = other.to_hash if other.respond_to?(:to_hash)
-      other = other.try(:with_indifferent_access) || other
-      other == to_hash
-    end
+    # def ==(other)
+    #   other = other.table if other.respond_to?(:table)
+    #   other == table
+    # end
 
     def append(attributes = {})
       attributes.each do |key, value|
-        key = key.to_s
-        if value.is_a?(Hash)
-          original_value = self[key]
-          value = original_value.table.deep_merge(value.deep_symbolize_keys) if original_value.is_a?(self.class)
-          self[key] = build(key, value)
-        else
-          self[key] = fetch_env_key_for(key) { value }
-        end
+        self[key.to_sym] = cast(key.to_sym, value)
       end
     end
 
@@ -53,35 +45,36 @@ module Ravioli
     end
 
     def pretty_print(printer = nil)
-      pretty = to_hash.pretty_print(printer)
-      if key_path.present?
-        pretty
-      else
-        "#<#{self.class.name} #{pretty}>"
-      end
+      table.pretty_print(printer)
     end
 
     def safe(*keys)
       fetch(*keys) { build(keys) }
     end
 
-    def to_hash
-      if !@modifiable
-        @_to_hash ||= table.except(:key_path)
-      else
-        table.except(:key_path)
-      end
-    end
-    alias as_hash to_hash
-    alias as_json to_hash
-
     private
 
     def build(keys, attributes = {})
       attributes[:key_path] = key_path_for(keys)
       child = self.class.new(attributes)
-      child.freeze if @locked
+      child.freeze if frozen?
       child
+    end
+
+    def cast(key, value)
+      if value.is_a?(Hash)
+        original_value = dig(*Array(key))
+        value = original_value.table.deep_merge(value.deep_symbolize_keys) if original_value.is_a?(self.class)
+        build(key, value)
+      else
+        fetch_env_key_for(key) {
+          if value.is_a?(Array)
+            value.each_with_index.map { |subvalue, index| cast(Array(key) + [index], subvalue) }
+          else
+            value
+          end
+        }
+      end
     end
 
     def fetch_env_key_for(keys, &block)
@@ -95,9 +88,9 @@ module Ravioli
 
     # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
-    def method_missing(missing_method, *args, &block)
+    def method_missing(method, *args, &block)
       # Return proper booleans from query methods
-      return super.present? if args.empty? && missing_method.to_s.ends_with?("?")
+      return send(method.to_s.chomp("?")).present? if args.empty? && method.to_s.ends_with?("?")
       super
     end
     # rubocop:enable Style/MissingRespondToMissing

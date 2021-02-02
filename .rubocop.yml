@@ -60,7 +60,7 @@ RSpec/Dialect:
 RSpec/ExampleLength:
   Exclude:
     - spec/features/**/*
-  Max: 15
+  Max: 50 # C'mon... we're testing large, nested hashes
 
 RSpec/MultipleExpectations:
   Exclude:

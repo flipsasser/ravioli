@@ -58,32 +58,39 @@ module Ravioli
     def load_config_file(path)
       config = parse_config_file(path)
       configuration.append(config) if config.present?
+    rescue => error
+      warn "Could not load config file #{path}", error
     end
 
     # Load secure credentials using a key either from a file or the ENV
     def load_credentials(path = "credentials", key_path: path, env_name: path.split("/").last)
       credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
       configuration.append(credentials) if credentials.present?
+    rescue => error
+      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error
+      {}
     end
 
     private
 
+    ENV_KEYS = %w[default development production shared staging test].freeze
     EXTNAMES = %w[yml yaml json].freeze
 
     attr_reader :configuration
 
     def extract_environmental_config(config)
-      # Check if the config hash is keyed by environment - if not, just return it as-is
-      return config unless (config.keys & %i[development production shared staging test]).any?
+      # Check if the config hash is keyed by environment - if not, just return it as-is. It's
+      # considered "keyed by environment" if it contains ONLY env-specific keys.
+      return config unless (config.keys & ENV_KEYS).any? && (config.keys - ENV_KEYS).empty?
 
       # Combine environmental config in the following order:
       # 1. Shared config
       # 2. Environment-specific
       # 3. Staging-specific (if we're in a staging environment)
-      environments = [:shared, Rails.env.to_sym]
-      environments.push(:staging) if configuration.staging?
+      environments = ["shared", Rails.env.to_s]
+      environments.push("staging") if configuration.staging?
       config.values_at(*environments).inject({}) { |final_config, environment_config|
-        final_config.deep_merge((environment_config || {}).deep_symbolize_keys)
+        final_config.deep_merge((environment_config || {}))
       }
     end
 
@@ -98,22 +105,24 @@ module Ravioli
     def parse_config_file(path)
       path = path_to_config_file_path(path)
 
-      parsed_file = case path.extname.downcase
+      config = case path.extname.downcase
       when ".json"
         parse_json_config_file(path)
       when ".yml", ".yaml"
         parse_yaml_config_file(path)
       else
-        raise "#{Ravioli::NAME} doesn't know how to parse a file"
+        raise ParseError.new("#{Ravioli::NAME} doesn't know how to parse #{path}")
       end
-      parsed_file = extract_environmental_config(parsed_file)
+
+      # At least expect a hash to be returned from the loaded config file
+      return {} unless config.is_a?(Hash)
+
+      # Extract a merged config based on the Rails.env (if the file is keyed that way)
+      config = extract_environmental_config(config)
 
       name = File.basename(path, File.extname(path))
       name = File.dirname(path).split(Pathname::SEPARATOR_PAT).last if name == "config"
-      {name => parsed_file}
-    rescue => error
-      warn "Could not load config file #{path}", error
-      {}
+      {name => config}
     end
 
     def parse_credentials(path, key_path: path, env_name: path.split("/").last)
@@ -125,14 +134,11 @@ module Ravioli
 
       credentials = Rails.application.encrypted("config/#{path}.yml.enc", options)&.config || {}
       credentials
-    rescue => error
-      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error
-      {}
     end
 
     def parse_json_config_file(path)
       contents = File.read(path)
-      JSON.parse(contents).deep_transform_keys { |key| key.to_s.underscore.to_sym }
+      JSON.parse(contents).deep_transform_keys { |key| key.to_s.underscore }
     end
 
     def parse_yaml_config_file(path)
@@ -187,4 +193,5 @@ module Ravioli
       @cause || super
     end
   end
+  class ParseError < StandardError; end
 end

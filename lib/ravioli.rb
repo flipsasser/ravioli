@@ -16,11 +16,13 @@ module Ravioli
       require_relative "ravioli/builder"
       builder = Builder.new(class_name: class_name, namespace: namespace, strict: strict)
       yield builder if block_given?
-      instances.push(builder.build!)
+      builder.build!.tap do |configuration|
+        instances.push(configuration)
+      end
     end
 
     def default
-      instances.first
+      instances.last
     end
 
     def instances

@@ -7,6 +7,10 @@ RSpec.describe Ravioli::Builder, "#add_staging_flag!" do
   let(:builder) { described_class.new(strict: true) }
   let(:configuration) { builder.build! }
 
+  after do
+    ENV["STAGING"] = nil
+  end
+
   it "doesn't return `true` if Rails.env is not 'production'" do
     allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new("test")).at_most(10000).times
     ENV["STAGING"] = "1"
