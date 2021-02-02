@@ -43,13 +43,11 @@ module Ravioli
       return safe(*keys) if safe
 
       fetch_env_key_for(keys) do
-        value = self
-        keys.each do |key|
-          value = value[key.to_s]
+        keys.inject(self) do |value, key|
+          value = value[key]
           break if value.blank?
+          value
         end
-
-        value
       end
     end
 

@@ -22,9 +22,9 @@ key = Rails.config.dig!(:thing, :api_key)
 
 1. [Installation](#installation)
 2. [Usage](#usage)
- 	- Direct accessors
- 	- Safe key-path traversal
- 	- `ENV` variables and precedence
+ 	- [Direct accessors](#accessing-configuration-values-directly)
+ 	- [Safe key-path traversal](#accessing-configuration-values-safely-by-key-path)
+ 	- [`ENV` variables and precedence]
 3. [Automatic Configuration](#automatic-configuration)
 4. [Manual Configuration](#manual-configuration)
 	- [Rails.config vs. constants](#setup-in-rails-config-vs-constants)
@@ -143,17 +143,6 @@ end
 
 Configuration values take precedence in the order they are applied. For example, if you load two config files defining `host`, the latest one will overwrite the earlier one's value.
 
-<!--### Advanced configuration
-
-#### The root key and top-level configuration
-
-Most applications have top-level configuration, e.g. the user-facing name of the app, a host URL, etc. So while it makes sense to keep your Sendgrid credentials centralized in `Rails.config.sendgrid`, you probably don't want to access your host URL with `Rails.config.app.host` - `Rails.config.host` is preferable.
-
-Similarly, who wants to define their `ENV` vars as, for example, `ENV['APP_HOST']`? Most folks just use `ENV['HOST']`.
-
-In order to avoid confusion, you can define a `root_key` on your top-level configuration. By default this is `app` but it can be whatever you prefer. From that point on, accessors like `Rails.config.dig(:app, :host)` will return-->
-
-
 ## Automatic Configuration
 
 The fastest way to use Ravioli is via automatic configuration, bootstrapping it into the `Rails.config` attribute. This is the default experience when you `require "ravioli"`, either explicitly through an initializer or implicitly through `gem "ravioli"` in your Gemfile.
@@ -162,36 +151,24 @@ The automatic configuration is equivalent to the following:
 
 1. Load all `.yml` and `.json` files in `config/` EXCEPT locales
 2. Load encrypted credentials files ([see Encryped Credentials" for details](#encrypted-credentials))
-3. Set a `staging?` flag to `Rails.env.production? && ENV["STAGING"]`
+3. Set a `staging?` flag on both `Rails.config` and `Rails.env` to the default value of `Rails.env.production? && ENV["STAGING"].present?`
 
-It looks like this:
+It looks like something this:
 
 ```ruby
 def Rails.config
   @_ravioli_config ||= Ravioli.build { |config|
-    config.auto_load_config_files
-    config.auto_load_credential_files
-    config[:staging?] = Rails.env.production? && ENV["STAGING"].present?
+    config.auto_load_config_files!
+    config.auto_load_credentials!
+    config.staging = Rails.env.production? && ENV["STAGING"].present?
     Rails.env.class_eval "def staging?; true; end" if config.staging?
   }
 end
 ```
 
-## Manual configuration using `Ravioli.build`
+## Manual configuration using `ravioli/builder` and `Ravioli.build`
 
-You can manually defined your configuration in an initializer if you don't want the automatic configuration assumptions to step on any toes.
-
-### Defining a central constant e.g. `App`
-
-`Ravioli.build` returns an instance of a configuration.
-
-### Loading credentials
-
-### Loading config files
-
-## Usage
-
-### Manual configuration
+You can manually define your configuration in an initializer if you don't want the automatic configuration assumptions to step on any toes.
 
 For the following examples, imagine a file in `config/sentry.yml`:
 
@@ -207,6 +184,24 @@ production:
 staging:
   environment: "staging"
 ```
+
+### Defining a central constant e.g. `App`
+
+`Ravioli.build` returns an instance of a configuration, so simply assign the constant to the result of that method:
+
+```ruby
+# config/intializers/_ravioli.rb
+require "ravioli/builder"
+
+App = Ravioli.build do |config|
+  config.load_config_file("config/mailjet.yml")
+end
+```
+
+### Loading credentials
+
+### Loading config files
+
 
 ## Automatic Setup
 
@@ -327,18 +322,22 @@ end
 
 Imagine the following encrypted YAML files:
 
-`rails credentials:edit`
+#### `config/credentials.yml.enc`
+
+Accessing the credentials with `rails credentials:edit`, let's say you have the following encrypted file:
 
 ```yaml
-app:
-  host: "http://localhost:3000"
+mailet:
+  api_key: "12345"
 ```
 
-and `rails credentials:edit --environment production`
+#### `config/credentials/production.yml.enc`
+
+Edit with `rails credentials:edit --environment production`
 
 ```yaml
-app:
-  host: "https://www.getmonti.com/"
+mailet:
+  api_key: "67891"
 ```
 
 You can then load credentials like so:
@@ -366,41 +365,7 @@ end
 Ravioli overrides loaded config or credential "key paths" with matching ENV vars. Imagine the above config setup, but run with `MAILJET_API_KEY="NEATO"` in the ENV:
 
 ```ruby
-Config.mailjet.api_key #=> "NEATO"
-```
-
-### The `app` prefix and root-level ENV overrides
-
-By default, Ravioli treats any configuration that is loaded with a root key `app` as a "root-level" ENV variable. As such, ENV variables override these *without* the `APP_` prefix. Here's an example:
-
-`config/urls.yml`
-
-```yaml
-app:
-  host: "localhost:3000"
-  url: "https://localhost:3000/"
-```
-
-The ENV var overrides for these don't require the `APP_` prefix:
-
-`HOST=localhost:8000 rails console` or `URL=http://localhost:8000 rails console` will set `Config.app.host` to `localhost:8000` or `Config.app.url` to `http://localhost:8000`.
-
-This helps to organize root-level configuration in a nested way, which makes your config files more maintainable.
-
-You can override the key Ravioli looks for:
-
-```ruby
-Config = Ravioli.build(root_key: :root) do
-	# ... your configuration ...
-end
-```
-
-You can also opt-out of this functionality when you build the Ravioli object:
-
-```ruby
-Config = Ravioli.build(root_key: false) do
-  # ... your configuration ...
-end
+Rails.config.mailjet.api_key #=> "NEATO"
 ```
 
 ## License
