@@ -1,14 +1,26 @@
 {
   "name": "ravioli",
   "version": "0.1.0",
-  "main": "dist/index.js",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
   "repository": "git@github.com:flipsasser/ravioli.git",
   "author": "Flip Sasser <hello@flipsasser.com>",
   "license": "MIT",
   "private": true,
+  "files": [
+    "dist/"
+  ],
   "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
+    "clean": "rm -rf dist/",
+    "lint": "eslint -c .eslintrc.js src/**/*.ts",
+    "prepare": "yarn clean && yarn build",
+    "prepublish": "yarn test && yarn line",
+    "preversion": "yarn lint",
+    "postversion": "git push && git push --tags",
     "test": "NODE_ENV=test mocha -r sucrase/register spec/**/*.spec.ts",
     "test:watch": "yarn watch '(clear 2> /dev/null || true) && yarn test || false'",
+    "version": "git add -A src",
     "watch": "yarn nodemon -w . -e js,json,ts --exec"
   },
   "dependencies": {

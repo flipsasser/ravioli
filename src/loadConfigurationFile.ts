@@ -2,12 +2,13 @@ import deepmerge from "deepmerge"
 import { readFileSync } from "fs"
 import { basename, dirname, extname, sep } from "path"
 
+import { ConfigurationData } from "./configuration"
 import { ParseError } from "./errors"
 import { parseYAML } from "./parseYAML"
 import { resolveConfigFilePath } from "./resolveConfigFilePath"
 
 const envKeys = new Set(["default", "development", "production", "shared", "staging", "test"])
-export function loadConfigurationFile(path: string, configuration?: any): any {
+export function loadConfigurationFile(path: string, configuration?: ConfigurationData): any {
   path = resolveConfigFilePath(path)
 
   const extension = extname(path)

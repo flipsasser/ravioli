@@ -1,6 +1,6 @@
 import { KeyMissingError } from "./errors"
 
-interface ConfigurationData {
+export interface ConfigurationData {
   [key: string]: ConfigurationData | any
 }
 type ConfigFn = (...args: any[]) => any
@@ -117,7 +117,7 @@ function extractFallback(args: Arg[]): FallbackFn {
   }
 }
 
-export function snakeCase(input: string) {
+export function snakeCase(input: string): string {
   if (!input) {
     return ""
   }

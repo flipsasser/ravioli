@@ -2,17 +2,23 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "assumeChangesOnlyAffectDirectDependencies": true,
-    "baseUrl": "./src/",
+    "declaration": true,
     "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "jsx": "react",
+    "experimentalDecorators": false,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ES2020",
     "moduleResolution": "node",
     "noImplicitAny": true,
     "noImplicitUseStrict": true,
-    "strictBindCallApply": true
+    "outDir": "dist/esm",
+    "removeComments": true,
+    "strictBindCallApply": true,
+    "target": "ES2016",
   },
+  "include": [
+    "src/"
+  ],
   "exclude": [
     "node_modules",
-    "**/*/node_modules"
   ]
 }
