@@ -115,25 +115,13 @@ module.exports = {
 
     /* import/export rules */
     "import/default": "off", // Let TypeScript sort this out
-    "import/first": "error", // Use custom import/order grouping rather than enforcing a single group
     "import/export": "error",
+    "import/first": "error", // Use custom import/order grouping rather than enforcing a single group
     "import/named": "off", // Let TypeScript sort this out
     "import/namespace": "error",
     "import/no-default-export": "error",
     "import/no-duplicates": "error",
     "import/no-extraneous-dependencies": "off",
-    // TODO: Restore this - trouble is, it's claiming teller-core is an extraneous dependency
-    // because it's defined through tsconfig paths
-    // "import/no-extraneous-dependencies": [
-    //   "error",
-    //   {
-    //     packageDir: [
-    //       __dirname,
-    //       join(__dirname, "client", "core"),
-    //       join(__dirname, "client", "web"),
-    //     ],
-    //   },
-    // ],
     "import/no-named-as-default": "error",
     "import/no-named-as-default-member": "error",
     "import/no-unresolved": "error",

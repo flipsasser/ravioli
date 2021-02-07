@@ -54,21 +54,21 @@ RSpec.describe Ravioli::Configuration do
   end
 
   describe "#dig!" do
-    it "returns values it finds something" do
+    it "returns values it finds" do
       expect(configuration.dig!(:thing, :other_thing)).to eq(build(third_thing: true))
     end
 
-    it "returns nil when it can't find something" do
+    it "raises a KeyMissingError when it can't find something" do
       expect { configuration.dig!(:non, :existant, :thing) }.to raise_error(Ravioli::KeyMissingError)
     end
   end
 
   describe "#fetch" do
-    it "returns values it finds something" do
+    it "returns values it finds" do
       expect(configuration.fetch(:thing, :other_thing) { {fourth_thing: false} }).to eq(build(third_thing: true))
     end
 
-    it "returns nil when it can't find something" do
+    it "returns the result of the fallback block when it can't find something" do
       expect(configuration.fetch(:non, :existant, :thing) { {fourth_thing: false} }).to eq({fourth_thing: false})
     end
   end
@@ -98,11 +98,11 @@ RSpec.describe Ravioli::Configuration do
   end
 
   describe "#safe" do
-    it "returns values it finds something" do
+    it "returns values it finds" do
       expect(configuration.safe(:thing, :other_thing)).to eq(build(third_thing: true))
     end
 
-    it "returns a blank config file when it can't find something" do
+    it "returns an empty config object when it can't find something" do
       dug = configuration.safe(:non, :existant, :thing)
       expect(dug).to be_instance_of(described_class)
       expect(dug).to eq(empty)

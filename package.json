@@ -7,14 +7,19 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "test": "mocha -r sucrase/register spec/**/*.spec.ts"
+    "test": "NODE_ENV=test mocha -r sucrase/register spec/**/*.spec.ts",
+    "test:watch": "yarn watch '(clear 2> /dev/null || true) && yarn test || false'",
+    "watch": "yarn nodemon -w . -e js,json,ts --exec"
   },
   "dependencies": {
     "deepmerge": "^4.2.2",
+    "glob": "^7.1.6",
     "yaml": "^2.0.0-3"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",
+    "@types/chai-like": "^1.1.0",
+    "@types/glob": "^7.1.3",
     "@types/js-yaml": "^4.0.0",
     "@types/mocha": "^8.2.0",
     "@types/node": "^14.14.22",
@@ -30,6 +35,7 @@
     "eslint-plugin-prettier": "^3.3.1",
     "eslint-plugin-sort-keys-shorthand": "^2.1.0",
     "mocha": "^8.2.1",
+    "nodemon": "^2.0.7",
     "prettier": "^2.2.1",
     "sucrase": "^3.17.1",
     "typescript": "^4.1.3"

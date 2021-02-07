@@ -156,6 +156,7 @@ module Ravioli
       end
       path = Rails.root.join(path) unless path.absolute?
 
+      # Try to guess an extname, if we weren't given one
       if path.extname.blank?
         Array(extnames).each do |extname|
           other_path = path.sub_ext(".#{extname}")

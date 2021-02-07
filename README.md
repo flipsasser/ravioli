@@ -16,8 +16,8 @@ key = ENV.fetch("THING_API_KEY") { Rails.credentials.thing&["api_key"] || raise(
 key = Rails.config.dig!(:thing, :api_key)
 ```
 
-<!--**FYI** Ravioli is two libraries: the Rails gem and an NPM package. This README focuses on the Ruby gem. You can also [read the JavaScript documentation](blob/master/src/README.md) for specifics about how to use Ravioli either in the Rails asset pipeline or in a standalone Node server context.
--->
+**FYI** Ravioli is two libraries: a Ruby gem, and an NPM package. This README focuses on the Ruby gem. You can also [read the JavaScript documentation](blob/master/src/README.md) for specifics about how to use Ravioli either in the Rails asset pipeline or in a standalone Node server context.
+
 ## Table of Contents
 
 1. [Installation](#installation)
@@ -139,7 +139,7 @@ end
 
 ### `ENV` variables and precedence
 
-`ENV` variables take precedence over loaded configuration files. When examining your configuration, Ravioli checks for a capitalized `ENV` variable corresponding to the keypath you're searching. Thus `Rails.config.dig(:database, :url)` is equivalent to `ENV.fetch("DATABASE_URL") { Rails.config.database&.url }`. 
+`ENV` variables take precedence over loaded configuration files. When examining your configuration, Ravioli checks for a capitalized `ENV` variable corresponding to the keypath you're searching. Thus `Rails.config.dig(:database, :url)` is equivalent to `ENV.fetch("DATABASE_URL") { Rails.config.database&.url }`.
 
 Configuration values take precedence in the order they are applied. For example, if you load two config files defining `host`, the latest one will overwrite the earlier one's value.
 

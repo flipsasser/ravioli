@@ -29,7 +29,7 @@ module Ravioli
 
       fetch_env_key_for(keys) do
         keys.inject(self) do |value, key|
-          value = value[key]
+          value = value.try(:[], key)
           break if value.blank?
           value
         end
