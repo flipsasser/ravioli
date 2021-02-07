@@ -132,7 +132,8 @@ module Ravioli
       options = {key_path: key_path}
       options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
 
-      credentials = Rails.application.encrypted("config/#{path}.yml.enc", options)&.config || {}
+      path = path_to_config_file_path(path, extnames: "yml.enc")
+      credentials = Rails.application.encrypted(path, options)&.config || {}
       credentials
     end
 

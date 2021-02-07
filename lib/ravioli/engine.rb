@@ -2,8 +2,6 @@
 
 module Ravioli
   class Engine < ::Rails::Engine
-    # isolate_namespace Ravioli
-
     # Bootstrap Ravioli onto the Rails app
     initializer "ravioli", before: "load_environment_config" do |app|
       Rails.extend Ravioli::Config unless Rails.respond_to?(:config)
@@ -20,7 +18,3 @@ module Ravioli
     end
   end
 end
-
-# if defined?(Rails) && Rails.respond_to?(:application) && Rails.application && !Rails.respond_to?(:config)
-#   Ravioli::Engine.bootstrap_config
-# end

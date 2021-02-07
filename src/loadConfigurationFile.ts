@@ -1,9 +1,9 @@
 import deepmerge from "deepmerge"
 import { readFileSync } from "fs"
-import { load as loadYAML } from "js-yaml"
 import { basename, dirname, extname, sep } from "path"
 
 import { ParseError } from "./errors"
+import { parseYAML } from "./parseYAML"
 import { resolveConfigFilePath } from "./resolveConfigFilePath"
 
 const envKeys = new Set(["default", "development", "production", "shared", "staging", "test"])
@@ -53,5 +53,5 @@ function parseJSONConfigurationFile(path: string) {
 }
 
 function parseYAMLConfigurationFile(path: string) {
-  return loadYAML(readFileSync(path).toString())
+  return parseYAML(readFileSync(path).toString())
 }

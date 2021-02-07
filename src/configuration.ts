@@ -103,7 +103,6 @@ function cast(keyPath: string[], value: any): any {
 }
 
 function envValueForKeyPath(keyPath: string[], fallback: FallbackFn): any {
-  console.log("looking for env value based on", keyPath.map(snakeCase).join("_").toUpperCase())
   const envValue = process.env[keyPath.map(snakeCase).join("_").toUpperCase()]
   if (envValue !== null && typeof envValue !== "undefined") {
     return envValue

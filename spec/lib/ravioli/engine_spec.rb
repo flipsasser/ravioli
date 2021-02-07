@@ -50,7 +50,7 @@ RSpec.describe "Ravioli::Engine" do
           anything_else: false,
         },
         name: "Dummy McAppface",
-        host: "http://localhost:3000/",
+        host: "http://test.local",
         secret_key_base: "b097c3056fdf2dc7444172368fc94905c626e7d534fb684d3148672a67d1c706cb7f0c70354c3d1c66a3214318c523204d9903172c72daf846f5bdedfc551b52",
       ))
     end

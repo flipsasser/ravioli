@@ -20,7 +20,7 @@ export default function (...args: Arg[]): any {
 
     // Load all config files in the `config/` directory we can
     const configDir = resolve(process.cwd(), "config")
-    const files = glob(join(configDir, "{[!locales/]**/*,*}.{json,yaml,yml}"))
+    const files = glob(join(configDir, "{[!locales]**/*,*}.{json,yaml,yml}"))
     files.forEach(file => {
       config = deepmerge(config, loadConfigurationFile(file, config))
     })
@@ -53,7 +53,6 @@ export default function (...args: Arg[]): any {
       )
     }
 
-    console.log(config)
     // Set up a default configuration
     defaultConfiguration = configuration(config)
   }

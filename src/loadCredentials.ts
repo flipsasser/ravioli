@@ -1,7 +1,7 @@
 import { createCipheriv } from "crypto"
 import { existsSync, readFileSync } from "fs"
-import { load as loadYAML } from "js-yaml"
 
+import { parseYAML } from "./parseYAML"
 import { resolveConfigFilePath } from "./resolveConfigFilePath"
 
 interface LoadCredentialsOptions {
@@ -68,5 +68,5 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
   decrypted = decrypted.slice(0, length)
 
   // Neato - parse the YAML
-  return loadYAML(decrypted.toString()) || {}
+  return parseYAML(decrypted.toString()) || {}
 }

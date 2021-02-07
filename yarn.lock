@@ -72,14 +72,7 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@types/chai-like@^1.1.0":
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/@types/chai-like/-/chai-like-1.1.0.tgz#288668e132f2c4fd618dc5747e0c1f2b7f20c4cc"
-  integrity sha512-PQ8Ejnng+k377MZv+PLV2q8J4vzDZup95kZv7WhmHQ9He8haZqBz4b1fYY9uZQfbq+Oaz04m2/9Ffl5BGbFImg==
-  dependencies:
-    "@types/chai" "*"
-
-"@types/chai@*", "@types/chai@^4.2.14":
+"@types/chai@^4.2.14":
   version "4.2.14"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.2.14.tgz#44d2dd0b5de6185089375d976b4ec5caf6861193"
   integrity sha512-G+ITQPXkwTrslfG5L/BksmbLUA0M1iybEsmCWPqzSxsRRhJZimBKJkoMi8fr/CPygPTj4zO5pJH7I2/cm9M7SQ==
@@ -91,11 +84,6 @@
   dependencies:
     "@types/minimatch" "*"
     "@types/node" "*"
-
-"@types/js-yaml@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@types/js-yaml/-/js-yaml-4.0.0.tgz#d1a11688112091f2c711674df3a65ea2f47b5dfb"
-  integrity sha512-4vlpCM5KPCL5CfGmTbpjwVKbISRYhduEJvvUWsH5EB7QInhEj94XPZ3ts/9FPiLZFqYO0xoW4ZL8z2AabTGgJA==
 
 "@types/json-schema@^7.0.3":
   version "7.0.7"
@@ -413,6 +401,13 @@ camelcase@^6.0.0:
   version "6.2.0"
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.2.0.tgz#924af881c9d525ac9d87f40d964e5cea982a1809"
   integrity sha512-c7wVvbw3f37nuobQNtgsgG9POC9qMbNuMQmTCqZv23b6MIz0fcYpBiOlv9gEN/hdLdnZTDQhg6e9Dq5M1vKvfg==
+
+chai-exclude@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/chai-exclude/-/chai-exclude-2.0.2.tgz#8f2f2881ee8f3ddf4c5af0f949c063503eee30f8"
+  integrity sha512-QmNVnvdSw8Huccdjm49mKu3HtoHxvjdavgYkY0KPQ5MI5UWfbc9sX1YqRgaMPf2GGtDXPoF2ram3AeNS4945Xw==
+  dependencies:
+    fclone "^1.0.11"
 
 chai@^4.2.0:
   version "4.2.0"
@@ -1001,6 +996,11 @@ fastq@^1.6.0:
   integrity sha512-AWuv6Ery3pM+dY7LYS8YIaCiQvUaos9OB1RyNgaOWnaX+Tik7Onvcsf8x8c+YtDeT0maYLniBip2hox5KtEXXA==
   dependencies:
     reusify "^1.0.4"
+
+fclone@^1.0.11:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/fclone/-/fclone-1.0.11.tgz#10e85da38bfea7fc599341c296ee1d77266ee640"
+  integrity sha1-EOhdo4v+p/xZk0HClu4ddyZu5kA=
 
 file-entry-cache@^6.0.0:
   version "6.0.0"
