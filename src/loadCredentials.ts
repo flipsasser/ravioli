@@ -10,7 +10,7 @@ interface LoadCredentialsOptions {
 }
 
 export function loadCredentials(path: string, options?: LoadCredentialsOptions): any {
-  path = resolveConfigFilePath(path, "yml.enc")
+  path = resolveConfigFilePath(path, { extnames: "yml.enc" })
 
   // Ensure the file exists! This is meant to support a world in which people don't opt-in to
   // encrypted credentials.
@@ -29,7 +29,7 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
 
   let key = envKey && process.env[envKey]
   if (!key) {
-    const keyFile = resolveConfigFilePath(keyPath, "key")
+    const keyFile = resolveConfigFilePath(keyPath, { extnames: "key" })
     if (!existsSync(keyFile)) {
       return {}
     }
