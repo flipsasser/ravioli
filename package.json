@@ -12,9 +12,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
-    "clean": "rm -rf dist/",
     "lint": "eslint -c .eslintrc.js src/**/*.ts",
-    "prepare": "yarn clean && yarn build",
+    "prepare": "rm -rf dist/ && yarn build",
     "prepublish": "yarn test && yarn line",
     "preversion": "yarn lint",
     "postversion": "git push && git push --tags",
