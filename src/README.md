@@ -1,4 +1,4 @@
-# Ravioli.js
+# Ravioli.js 🍝
 
 **Grab a fork and twist your configuration spaghetti in a single, delicious dumpling!**
 
@@ -7,8 +7,8 @@ Ravioli combines all of your app's runtime configuration into a unified, simple 
 **It's as simple as this:**
 
 ```javascript
-import { config } from "ravioli"
-const key = config.require("thing", "api_key")
+import config from "ravioli"
+const key = config("thing", "apiKey")
 ```
 
 ## Table of Contents
@@ -59,7 +59,7 @@ The easiest way to use it is to import the default configuration object from Rav
 
 ```javascript
 import config from "ravioli"
-console.log(config().database.host) // outputs "localhost"
+console.log(config("database.host")) // outputs "localhost"
 ```
 
 ### Accessing configuration values directly
@@ -67,7 +67,7 @@ console.log(config().database.host) // outputs "localhost"
 Ravioli supports direct accessors:
 
 ```javascript
-let config = require("ravioli").config()
+let config = require("ravioli")()
 console.log(config.host) // "example.com"
 console.log(config.database.port) // "5432"
 console.log(config.not.here) // Uncaught TypeError: Cannot read property 'here' of undefined
@@ -75,12 +75,13 @@ console.log(config.not.here) // Uncaught TypeError: Cannot read property 'here' 
 
 ### Accessing configuration values safely by key path
 
-#### Traversing the keypath with `dig`
+#### Traversing the keypath
 
-You can traverse deeply nested config values safely with `dig`:
+You can traverse deeply nested config values safely with keypaths, either as separate arguments or as dot-separated paths:
 
 ```javascript
 config("database", "port") // "5432"
+config("database.port") // "5432"
 config("not", "here") // null
 ```
 
@@ -95,7 +96,7 @@ config("not", "here", () => "PRESENT!") // "PRESENT!" is returned from the funct
 
 #### Requiring configuration values with `require`
 
-If a part of your app cannot operate without a configuration value, e.g. an API key is required to make an API call, you can use `require`, which behaves identically to `dig` except it will throw a `KeyMissingError` if no value is specified:
+If a part of your app cannot operate without a configuration value, e.g. an API key is required to make an API call, you can use `require`, which behaves identically to `config("whatever")`, except it will throw a `KeyMissingError` if no value is specified:
 
 ```javascript
 let key = config.require("example", "apiKey") // Uncaught KeyMissingError: Could not find configuration value at key path ["example", "apiKey"]
@@ -107,19 +108,19 @@ If you want to make sure you are operating on a configuration object, even if it
 
 ```javascript
 config("google") // null
-config.safe("google") // {}
+config.safe("google") // {require: [Function: require], safe: [Function: safe]}
 ```
 
 Use `safe` when, for example, you don't want your code to explode because a root config key is not set. Here's an example:
 
 ```javascript
-import { config } from "ravioli"
+import config from "ravioli"
 import React from "react"
 
 const google = config.safe("google")
 export const GoogleMap = (props) => (
   <React.Fragment>
-    <script src={google.fetch("baseUri", () => `https://api.google.com/maps-do-stuff-cool-rights?apiKey=${google.apiKey}`)}>
+    <script src={google("baseUri", () => `https://api.google.com/maps-do-stuff-cool-rights?apiKey=${google.apiKey}`)}>
     <div className="google-maps-wrapper" {...props} />
   </React>
 )
@@ -138,7 +139,7 @@ The fastest way to use Ravioli is via automatic configuration, bootstrapping it 
 The automatic configuration is equivalent to the following:
 
 1. Load all `.yml` and `.json` files in your app's root `config/` directory EXCEPT for `config/locales/**/*.yml`
-2. Load encrypted credentials files ([see Encryped Credentials" for details](#encrypted-credentials))
+2. Load encrypted credentials files ([see Encryped Credentials for details](#encrypted-credentials))
 3. Set a `staging` flag on `config` to the default value of `process.env.NODE_ENV == "production" && !!process.env.STAGING`
 
 It is the equivalent of manually building a configuration using lower-level Ravioli tools:
@@ -174,7 +175,7 @@ staging:
 
 ```javascript
 // config.js
-import { loadConfigurationFile } from "ravioli"
+import { loadConfigurationFile } from "ravioli/build"
 const config = loadConfigurationFile("config/sentry.yml")
 
 export { config }
