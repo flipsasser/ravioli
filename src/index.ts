@@ -56,10 +56,3 @@ export default configuration(() => {
 
   return config
 })
-
-// Export the other pieces of the package
-export * from "./configuration"
-export * from "./errors"
-export * from "./loadConfigurationFile"
-export * from "./loadCredentials"
-export * from "./resolveConfigFilePath"

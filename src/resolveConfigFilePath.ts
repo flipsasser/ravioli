@@ -27,13 +27,6 @@ export function resolveConfigFilePath(
       }
     }
 
-    // eslint-disable-next-line no-console
-    console.warn(
-      "Could not automatically resolve path",
-      basePath,
-      `(${path}) with any of the following extensions:`,
-      extnames.join(", "),
-    )
     return `${path}.${extnames[0]}`
   }
 
