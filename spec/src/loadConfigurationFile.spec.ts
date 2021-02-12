@@ -6,7 +6,7 @@ import { loadConfigurationFile } from "../../src/loadConfigurationFile"
 
 describe("loadConfigurationFile", () => {
   it("loads JSON configuration files", () => {
-    expect(loadConfigurationFile("spec/dummy/config/json_test.json")).to.deep.eq({
+    expect(loadConfigurationFile("spec/fixtures/dummy/config/json_test.json")).to.deep.eq({
       // Important note: loadConfigurationFile does NOT convert keys to camel case; this happens at the configuration level!
       json_test: {
         anythingElse: false,
@@ -16,7 +16,7 @@ describe("loadConfigurationFile", () => {
   })
 
   it("loads YAML configuration files", () => {
-    expect(loadConfigurationFile("spec/dummy/config/yml_test.yml")).to.deep.eq({
+    expect(loadConfigurationFile("spec/fixtures/dummy/config/yml_test.yml")).to.deep.eq({
       yml_test: {
         anything_else: false,
         whatever: true,
@@ -25,7 +25,7 @@ describe("loadConfigurationFile", () => {
   })
 
   it("load nested files and renames them if they're named 'config'", () => {
-    expect(loadConfigurationFile("spec/dummy/config/nested/config.json")).to.deep.eq({
+    expect(loadConfigurationFile("spec/fixtures/dummy/config/nested/config.json")).to.deep.eq({
       nested: {
         things: [
           {
@@ -37,7 +37,7 @@ describe("loadConfigurationFile", () => {
   })
 
   it("loads and merges environment-specific configuration files", () => {
-    expect(loadConfigurationFile("spec/dummy/config/json_env_test.json")).to.deep.eq({
+    expect(loadConfigurationFile("spec/fixtures/dummy/config/json_env_test.json")).to.deep.eq({
       json_env_test: {
         anotherThing: false,
         thing: true,

@@ -1,5 +1,7 @@
-import { existsSync, readFileSync } from "fs"
-import { dirname, extname, join, normalize, relative, resolve, sep } from "path"
+import { existsSync } from "fs"
+import { extname, join, resolve, sep } from "path"
+
+import { getProjectRoot } from "./getProjectRoot"
 
 interface ResolveOptions {
   extnames?: string | string[]
@@ -25,6 +27,7 @@ export function resolveConfigFilePath(
       }
     }
 
+    // eslint-disable-next-line no-console
     console.warn(
       "Could not automatically resolve path",
       basePath,
@@ -35,38 +38,4 @@ export function resolveConfigFilePath(
   }
 
   return path
-}
-
-let projectRoot: string
-export function getProjectRoot(): string {
-  if (projectRoot) {
-    return projectRoot
-  }
-
-  const initial = process.cwd()
-  let previous = null
-  let current = normalize(initial)
-
-  do {
-    const pkg = readPackageJSON(current)
-    if (pkg?.workspaces) {
-      const relativePath = relative(current, initial)
-
-      return relativePath === "" || pkg.workspaces.includes(relativePath) ? current : initial
-    }
-
-    previous = current
-    current = dirname(current)
-  } while (current !== previous)
-
-  return initial
-}
-
-function readPackageJSON(path: string): any {
-  const file = join(path, "package.json")
-  if (existsSync(file)) {
-    return JSON.parse(readFileSync(file, "utf8"))
-  }
-
-  return null
 }

@@ -6,29 +6,34 @@ export interface ConfigurationData {
 type ConfigFn = (...args: any[]) => any
 type FallbackFn = () => any
 export type Arg = string | FallbackFn
-
-export type Configuration = {
+interface ConfigAccessors {
   require(...args: any[]): any
   safe(...args: any[]): any
-} & ConfigurationData &
-  ConfigFn
+}
 
-export function configuration(initialConfig: any = {}): Configuration {
-  const data: ConfigurationData = {}
-  const keyPath: string[] = initialConfig._keyPath || []
-  delete initialConfig._keyPath
+export type Configuration = ConfigAccessors & ConfigurationData & ConfigFn
 
-  if (initialConfig) {
-    for (let key in initialConfig) {
-      if (initialConfig.hasOwnProperty(key)) {
-        const value: any = initialConfig[key]
-        key = camelize(key)
-        data[key] = cast(keyPath.concat([key]), value)
-      }
-    }
+export function configuration(
+  initialConfig: ConfigurationData | (() => ConfigurationData) = {},
+): Configuration {
+  let data: ConfigurationData
+  let keyPath: string[]
+
+  if (typeof initialConfig === "object") {
+    keyPath = initialConfig._keyPath || []
+    delete initialConfig._keyPath
+    data = {}
+    append(initialConfig, data, keyPath)
+  } else {
+    keyPath = []
   }
 
   function get(...args: Arg[]): any {
+    if (!data && typeof initialConfig === "function") {
+      data = {}
+      append(initialConfig(), data, keyPath)
+    }
+
     if (args.length === 0) {
       return Object.assign({}, data)
     }
@@ -55,31 +60,42 @@ export function configuration(initialConfig: any = {}): Configuration {
     })
   }
 
-  const { name: _, displayName: __, ...dataWithoutReservedProperties } = data
+  const accessors = {
+    require: (...args: Arg[]): any => {
+      // Discard any default value function from the args
+      extractFallback(args)
 
-  return Object.assign(
-    get,
-    {
-      require: (...args: Arg[]): any => {
-        // Discard any default value function from the args
-        extractFallback(args)
-
-        // Add our own default value function, which will throw the error when called
-        args.push(() => {
-          throw new KeyMissingError(
-            `Could not find configuration value at key path [${args
-              .map(arg => JSON.stringify(arg))
-              .join(", ")}]`,
-          )
-        })
-        return get.apply(this, args)
-      },
-      safe: (...args: Arg[]): any => {
-        return get.apply(this, args) || configuration({})
-      },
+      // Add our own default value function, which will throw the error when called
+      args.push(() => {
+        throw new KeyMissingError(
+          `Could not find configuration value at key path [${args
+            .map(arg => JSON.stringify(arg))
+            .join(", ")}]`,
+        )
+      })
+      return get.apply(this, args)
     },
-    dataWithoutReservedProperties,
-  )
+    safe: (...args: Arg[]): any => {
+      return get.apply(this, args) || configuration({})
+    },
+  }
+
+  if (data) {
+    const { name: _, displayName: __, ...dataWithoutReservedProperties } = data
+    return Object.assign(get, accessors, dataWithoutReservedProperties)
+  } else {
+    return Object.assign(get, accessors)
+  }
+}
+
+function append(config: any, result: ConfigurationData, keyPath: string[]) {
+  for (let key in config) {
+    if (config.hasOwnProperty(key)) {
+      const value: any = config[key]
+      key = camelize(key)
+      result[key] = cast(keyPath.concat([key]), value)
+    }
+  }
 }
 
 function camelize(input: string) {

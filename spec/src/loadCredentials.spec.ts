@@ -9,9 +9,9 @@ describe("loadCredentials", () => {
   it("loads the root credentials file with a key file", () => {
     delete process.env.RAILS_MASTER_KEY
     expect(
-      loadCredentials("spec/dummy/config/credentials.yml.enc", {
+      loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
         envKey: "master",
-        keyPath: "spec/dummy/config/master.key",
+        keyPath: "spec/fixtures/dummy/config/master.key",
       }),
     ).to.deep.eq({
       host: "http://localhost:3000/",
@@ -23,10 +23,10 @@ describe("loadCredentials", () => {
 
   it("loads the root credentials file with an interpolated ENV key", () => {
     process.env.RAILS_MASTER_KEY = readFileSync(
-      resolve(process.cwd(), "spec/dummy/config/master.key"),
+      resolve(process.cwd(), "spec/fixtures/dummy/config/master.key"),
     ).toString()
     expect(
-      loadCredentials("spec/dummy/config/credentials.yml.enc", {
+      loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
         envKey: "master",
         keyPath: "/nothing.key",
       }),
@@ -40,10 +40,10 @@ describe("loadCredentials", () => {
 
   it("loads the root credentials file with a full ENV key name", () => {
     process.env.RAILS_MASTER_KEY = readFileSync(
-      resolve(process.cwd(), "spec/dummy/config/master.key"),
+      resolve(process.cwd(), "spec/fixtures/dummy/config/master.key"),
     ).toString()
     expect(
-      loadCredentials("spec/dummy/config/credentials.yml.enc", {
+      loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
         envKey: "RAILS_MASTER_KEY",
         keyPath: "/dev/null",
       }),
@@ -58,10 +58,10 @@ describe("loadCredentials", () => {
   it("doesn't load credentials without a key file or an ENV variable", () => {
     delete process.env.RAILS_MASTER_KEY
     process.env.RAILS_MASTER_KEY = readFileSync(
-      resolve(process.cwd(), "spec/dummy/config/master.key"),
+      resolve(process.cwd(), "spec/fixtures/dummy/config/master.key"),
     ).toString()
     expect(
-      loadCredentials("spec/dummy/config/credentials.yml.enc", {
+      loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
         envKey: "nothing",
         keyPath: "/dev/null",
       }),

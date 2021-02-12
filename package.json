@@ -14,7 +14,7 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
     "lint": "eslint -c .eslintrc.js src/**/*.ts",
     "prepare": "rm -rf dist/ && yarn build",
-    "prepublish": "yarn test && yarn line",
+    "prepublish": "yarn test && yarn lint",
     "preversion": "yarn lint",
     "postversion": "git push && git push --tags",
     "test": "NODE_ENV=test mocha -r sucrase/register spec/**/*.spec.ts",
@@ -25,7 +25,7 @@
   "dependencies": {
     "deepmerge": "^4.2.2",
     "glob": "^7.1.6",
-    "yaml": "^2.0.0-3"
+    "yaml": "^1.7.2"
   },
   "devDependencies": {
     "@types/chai": "^4.2.14",

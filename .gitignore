@@ -6,8 +6,8 @@ coverage/
 dist/
 node_modules
 pkg/
-spec/dummy/log/*
-spec/dummy/tmp/*
+spec/fixtures/dummy/log/*
+spec/fixtures/dummy/tmp/*
 spec/examples.txt
 src/*.js
 tmp/*

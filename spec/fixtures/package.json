@@ -1,0 +1,6 @@
+{
+  "name": "workspace-test",
+  "workspaces": [
+    "./dummy/client"
+  ]
+}
