@@ -3,6 +3,7 @@
 require "active_support/all"
 
 # These are the basic building blocks of Ravioli
+require_relative "ravioli/builder"
 require_relative "ravioli/configuration"
 require_relative "ravioli/version"
 
@@ -13,7 +14,6 @@ module Ravioli
 
   class << self
     def build(class_name: "Configuration", namespace: nil, strict: false, &block)
-      require_relative "ravioli/builder"
       builder = Builder.new(class_name: class_name, namespace: namespace, strict: strict)
       yield builder if block_given?
       builder.build!.tap do |configuration|

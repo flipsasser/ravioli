@@ -7,25 +7,38 @@ Ravioli combines all of your app's runtime configuration into a unified, simple 
 **It's as simple as this:**
 
 ```javascript
+// ESM
 import config from "ravioli"
 const key = config("thing", "apiKey")
+
+// CommonJS
+const config = require("ravioli")
+const key = config("thing", "apiKey")
 ```
+**🚨 FYI:** Ravioli is two libraries: an NPM package (this doc), and [a Ruby gem](README.md). You _absolutely do not_ have to use it with Ruby/Rails, but it *does* assume your configuration files are in `config/`, which is a Rails convention. You can (very easily) [load files from anywhere](#manual-setup) when setting up a Ravioli instance.
 
 ## Table of Contents
 
 1. [Installation](#installation)
-2. [Setup](#setup)
-3. [Usage](#usage)
-4. [How ENV vars work](#how-env-vars-work)
-5. [License](#license)
+2. [Usage](#usage)
+3. [Automatic Configuration](#automatic-configuration)
+4. [Manual Configuration](#manual-configuration)
+5. [Bundling](#bundling)
+6. [License](#license)
 
 ## Installation
 
-Install the package how you would any other package:
+Ravioli is installed just like any NPM package:
 
-- Yarn: `yarn add ravioli`
-- NPM: `npm install --save ravioli`
-- NPX: I don't know how NPX works; I'm still using Yarn. However you would do that, I guess?
+<table><tbody>
+<tr><th>Yarn</th><td>`yarn add ravioli` (or `yarn add -D ravioli` if [using with a bundler](#bundling))</td></tr>
+<tr><th>NPM</th><td>`npm install --save ravioli` (or `npm install --save-dev ravioli` if [using with a bundler](#bundling))</td></tr>
+<tr><th>NPX</th><td> To be perfectly honest, I don't know how NPX works; I'm still using Yarn. However you would do that, I guess? You've got this. If you're using NPX, you know how to install stuff. Obviously.
+</td></tr>
+</tbody></table>
+
+
+**Note on installing as a dev dependency:** [I'll talk more about this later](#bundling), but **TLDR if Ravioli is being used within a build toolchain (e.g. Webpack, Rollup, esbuild, whatever), install it as dev dependency;** if you're using it in realtime (e.g. on a server), keep it in your regular dependencies.
 
 ## Usage
 
@@ -49,7 +62,7 @@ sentry:
   dsn: "https://sentry.io/whatever?api_key=12345"
 ```
 
-<small>*this structure is the end result of Ravioli's loading process; it has nothing to do with filesystem organization or config file layout. We'll talk about that in a sec, so just slow your roll about loading up config files until then, my good friend.</small>
+<small>*this structure is the end result of Ravioli's loading process; it has nothing to do with filesystem organization or config file layout. We'll talk about that in a sec, so just slow your roll about loading up config files until then.</small>
 
 ### Setup
 

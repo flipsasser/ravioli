@@ -26,14 +26,15 @@ module Ravioli
     # Automatically infer a `staging?` status
     def add_staging_flag!(is_staging = Rails.env.production? && ENV["STAGING"].present?)
       configuration.staging = is_staging
-      Rails.env.class_eval("def staging?; true; end", __FILE__, __LINE__) if configuration.staging?
+      Rails.env.class_eval("def staging?; Ravioli.default&.staging?; end", __FILE__, __LINE__)
+      is_staging
     end
 
     # Load YAML or JSON files in config/**/* (except for locales)
     def auto_load_config_files!
       config_dir = Rails.root.join("config")
       Dir[config_dir.join("{[!locales/]**/*,*}.{json,yaml,yml}")].each do |config_file|
-        load_config_file(config_file)
+        load_config_file(config_file, key: !File.basename(config_file, File.extname(config_file)).casecmp("app").zero?)
       end
     end
 
@@ -55,8 +56,8 @@ module Ravioli
     end
 
     # Load a config file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
-    def load_config_file(path)
-      config = parse_config_file(path)
+    def load_config_file(path, options = {})
+      config = parse_config_file(path, options)
       configuration.append(config) if config.present?
     rescue => error
       warn "Could not load config file #{path}", error
@@ -102,7 +103,7 @@ module Ravioli
     # rubocop:enable Style/MissingRespondToMissing
     # rubocop:enable Style/MethodMissingSuper
 
-    def parse_config_file(path)
+    def parse_config_file(path, options = {})
       path = path_to_config_file_path(path)
 
       config = case path.extname.downcase
@@ -120,8 +121,19 @@ module Ravioli
       # Extract a merged config based on the Rails.env (if the file is keyed that way)
       config = extract_environmental_config(config)
 
-      name = File.basename(path, File.extname(path))
-      name = File.dirname(path).split(Pathname::SEPARATOR_PAT).last if name == "config"
+      # Key the configuration according the passed-in options
+      key = options.delete(:key)
+      return config if key == false # `key: false` means don't key the configuration at all
+
+      if key == true
+        # `key: true` means key it automatically based on the filename
+        name = File.basename(path, File.extname(path))
+        name = File.dirname(path).split(Pathname::SEPARATOR_PAT).last if name.casecmp("config").zero?
+      else
+        # `key: :anything_else` means use `:anything_else` as the key
+        name = key.to_s
+      end
+
       {name => config}
     end
 
