@@ -122,7 +122,7 @@ module Ravioli
       config = extract_environmental_config(config)
 
       # Key the configuration according the passed-in options
-      key = options.delete(:key)
+      key = options.delete(:key) { true }
       return config if key == false # `key: false` means don't key the configuration at all
 
       if key == true
