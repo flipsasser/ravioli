@@ -7,8 +7,9 @@ require_relative "ravioli/builder"
 require_relative "ravioli/configuration"
 require_relative "ravioli/version"
 
-# The top-level Ravioli module contains helper methods for building configuration instances and
-# accessing them, as well as the various classes that it relies on to build stuff
+##
+# Ravioli contains helper methods for building Configuration instances and accessing them, as well
+# as the Builder class for help loading configuration files and encrypted credentials
 module Ravioli
   NAME = "Ravioli"
 

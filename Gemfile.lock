@@ -189,6 +189,7 @@ GEM
     websocket-driver (0.7.3)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
+    yard (0.9.26)
     zeitwerk (2.4.0)
 
 PLATFORMS
@@ -208,6 +209,7 @@ DEPENDENCIES
   simplecov
   sqlite3
   standard (~> 0.4)
+  yard (~> 0.9)
 
 BUNDLED WITH
    2.1.4
