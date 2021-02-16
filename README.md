@@ -217,7 +217,7 @@ Ravioli will then check for [encrypted credentials](https://guides.rubyonrails.o
 2. Then, it loads and applies `config/credentials/RAILS_ENV.yml.enc` over top of what it has already loaded
 3. Finally, IF `Rails.config.staging?` IS TRUE, it loads and applies `config/credentials/staging.yml.enc`
 
-This allows you to use your secure credentials stores without duplicating information; you can simply layer environment-specific values over top of 
+This allows you to use your secure credentials stores without duplicating information; you can simply layer environment-specific values over top of
 
 ### All put together, it does this:
 
@@ -260,7 +260,7 @@ whatever:
 `Ravioli.build` also does a few handy things:
 
 - It freezes the configuration object so it is immutable,
-- It caches the final configuration in `Ravioli.instances`, and
+- It caches the final configuration in `Ravioli.configurations`, and
 - It sets `Ravioli.default` to the most-recently built configuration
 
 ### Direct construction with `Ravioli::Configuration.new`
@@ -463,4 +463,3 @@ Credentials are loaded in that order, too, so that you can have a base setup on 
 ## License
 
 Ravioli is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-	4e

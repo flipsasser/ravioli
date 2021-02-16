@@ -9,6 +9,7 @@ RSpec.describe Ravioli::Builder, "#add_staging_flag!" do
 
   after do
     ENV["STAGING"] = nil
+    Ravioli.configurations.clear
   end
 
   it "doesn't return `true` if Rails.env is not 'production'" do

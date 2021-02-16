@@ -18,16 +18,16 @@ module Ravioli
       builder = Builder.new(class_name: class_name, namespace: namespace, strict: strict)
       yield builder if block_given?
       builder.build!.tap do |configuration|
-        instances.push(configuration)
+        configurations.push(configuration)
       end
     end
 
     def default
-      instances.last
+      configurations.last
     end
 
-    def instances
-      @instances ||= []
+    def configurations
+      @configurations ||= []
     end
   end
 end

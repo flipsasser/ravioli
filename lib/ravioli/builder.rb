@@ -26,7 +26,14 @@ module Ravioli
     # Automatically infer a `staging?` status
     def add_staging_flag!(is_staging = Rails.env.production? && ENV["STAGING"].present?)
       configuration.staging = is_staging
-      Rails.env.class_eval("def staging?; Ravioli.default&.staging?; end", __FILE__, __LINE__)
+      Rails.env.class_eval <<-EOC, __FILE__, __LINE__ + 1
+        def staging?
+          config = Rails.try(:config)
+          return false unless config&.is_a?(Ravioli::Configuration)
+
+          config.staging?
+        end
+      EOC
       is_staging
     end
 
