@@ -50,9 +50,18 @@ export function loadConfigurationFile(path: string, configuration?: Configuratio
 }
 
 function parseJSONConfigurationFile(path: string) {
-  return JSON.parse(readFileSync(path, "utf8"))
+  try {
+    return JSON.parse(readFileSync(path, "utf8"))
+  } catch (error) {
+    console.error("Could not parse JSON file at ", path, error)
+  }
 }
 
 function parseYAMLConfigurationFile(path: string) {
-  return parseYAML(readFileSync(path).toString())
+  try {
+    return parseYAML(readFileSync(path).toString())
+  } catch (error) {
+    console.error("Could not parse YAML file at ", path, error)
+    return {}
+  }
 }
