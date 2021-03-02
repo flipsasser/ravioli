@@ -1,5 +1,4 @@
 # Ravioli.js 🍝
-
 **Grab a fork and twist your configuration spaghetti in a single, delicious dumpling!**
 
 Ravioli combines all of your app's runtime configuration into a unified, simple interface. **It combines YAML or JSON configuration files, encrypted Rails credentials, and ENV vars into one easy-to-consume interface** so you can focus on writing code and not on where configuration comes from.
@@ -8,14 +7,18 @@ Ravioli combines all of your app's runtime configuration into a unified, simple 
 
 ```javascript
 // ESM
-import config from "ravioli"
+import config from "@getmonti/ravioli"
 const key = config("thing", "apiKey")
 
 // CommonJS
-const config = require("ravioli")
+const config = require("@getmonti/ravioli")
 const key = config("thing", "apiKey")
 ```
 **🚨 FYI:** Ravioli is two libraries: an NPM package (this doc), and [a Ruby gem](README.md). You _absolutely do not_ have to use it with Ruby/Rails, but it *does* assume your configuration files are in `config/`, which is a Rails convention. You can (very easily) [load files from anywhere](#manual-setup) when setting up a Ravioli instance.
+
+## THIS README IS A WIP
+
+**🚨 LAZINESS ALERT 🚨** Ravioli works awesome-like, but it's NOT awesomely documented. This is because I am lazy and hate documentation. I am trying to better myself; please do not hate me for this.
 
 ## Table of Contents
 
@@ -31,8 +34,8 @@ const key = config("thing", "apiKey")
 Ravioli is installed just like any NPM package:
 
 <table><tbody>
-<tr><th>Yarn</th><td>`yarn add ravioli` (or `yarn add -D ravioli` if [using with a bundler](#bundling))</td></tr>
-<tr><th>NPM</th><td>`npm install --save ravioli` (or `npm install --save-dev ravioli` if [using with a bundler](#bundling))</td></tr>
+<tr><th>Yarn</th><td>`yarn add @getmonti/ravioli` (or `yarn add -D @getmonti/ravioli` if [using with a bundler](#bundling))</td></tr>
+<tr><th>NPM</th><td>`npm install --save @getmonti/ravioli` (or `npm install --save-dev @getmonti/ravioli` if [using with a bundler](#bundling))</td></tr>
 <tr><th>NPX</th><td> To be perfectly honest, I don't know how NPX works; I'm still using Yarn. However you would do that, I guess? You've got this. If you're using NPX, you know how to install stuff. Obviously.
 </td></tr>
 </tbody></table>
@@ -71,7 +74,7 @@ You can use Ravioli in one of two ways. The first way is to allow it do all the 
 The easiest way to use it is to import the default configuration object from Ravioli, which will simply configure itself the first time you use it:
 
 ```javascript
-import config from "ravioli"
+import config from "@getmonti/ravioli"
 console.log(config("database.host")) // outputs "localhost"
 ```
 
@@ -80,8 +83,8 @@ console.log(config("database.host")) // outputs "localhost"
 Ravioli supports direct accessors:
 
 ```javascript
-let config = require("ravioli")()
-console.log(config.host) // "example.com"
+let config = require("@getmonti/ravioli")()
+console.log(config.hosmple.com"
 console.log(config.database.port) // "5432"
 console.log(config.not.here) // Uncaught TypeError: Cannot read property 'here' of undefined
 ```
@@ -127,8 +130,8 @@ config.safe("google") // {require: [Function: require], safe: [Function: safe]}
 Use `safe` when, for example, you don't want your code to explode because a root config key is not set. Here's an example:
 
 ```javascript
-import config from "ravioli"
-import React from "react"
+import config from "@getmonti/ravioli"
+import React from "r
 
 const google = config.safe("google")
 export const GoogleMap = (props) => (
@@ -147,7 +150,7 @@ Configuration values take precedence in the order they are applied. For example,
 
 ## Automatic Configuration
 
-The fastest way to use Ravioli is via automatic configuration, bootstrapping it into the `config` object exported from the package. This is the default experience when you import it either via `import config from "ravioli"` or `const config = require("ravioli")`.
+The fastest way to use Ravioli is via automatic configuration, bootstrapping it into the `config` object exported from the package. This is the default experience when you import it either via `import config from "@getmonti/ravioli"` or `const config = require("@getmonti/ravioli")`.
 
 The automatic configuration is equivalent to the following:
 
@@ -158,7 +161,7 @@ The automatic configuration is equivalent to the following:
 It is the equivalent of manually building a configuration using lower-level Ravioli tools:
 
 ```javascript
-import { addStagingFlag, loadConfigurationFile, loadCredentials } from "ravioli"
+import { addStagingFlag, loadConfigurationFile, loadCredentials } from "@getmonti/ravioli"
 
 const config = loadConfigurationFile("config/app.json") // the contents of app.json wrapped in a Ravioli configuration accessor
 loadCredentials(config, {key: "config/master.key", env: "RAILS_MASTER_KEY"})
@@ -188,7 +191,7 @@ staging:
 
 ```javascript
 // config.js
-import { loadConfigurationFile } from "ravioli/build"
+import { loadConfigurationFile } from "@getmonti/ravioli/build"
 const config = loadConfigurationFile("config/sentry.yml")
 
 export { config }
