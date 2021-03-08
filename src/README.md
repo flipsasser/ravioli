@@ -161,14 +161,14 @@ The automatic configuration is equivalent to the following:
 It is the equivalent of manually building a configuration using lower-level Ravioli tools:
 
 ```javascript
-import { addStagingFlag, loadConfigurationFile, loadCredentials } from "@getmonti/ravioli"
+import { addStagingFlag, loadFile, loadCredentials } from "@getmonti/ravioli"
 
-const config = loadConfigurationFile("config/app.json") // the contents of app.json wrapped in a Ravioli configuration accessor
+const config = loadFile("config/app.json") // the contents of app.json wrapped in a Ravioli configuration accessor
 loadCredentials(config, {key: "config/master.key", env: "RAILS_MASTER_KEY"})
 addStagingFlag(config) // adds config("staging") or config.staging with a default value
 ```
 
-## Manual configuration using `loadConfigurationFile`, `loadCredentials`, and `addStagingFlag`
+## Manual configuration using `loadFile`, `loadCredentials`, and `addStagingFlag`
 
 You can manually define your configuration if you don't want the automatic configuration assumptions to step on any toes.
 
@@ -187,12 +187,12 @@ staging:
   environment: "staging"
 ```
 
-`loadConfigurationFile` returns an instance of a configuration, so simply export the result of that method:
+`loadFile` returns an instance of a configuration, so simply export the result of that method:
 
 ```javascript
 // config.js
-import { loadConfigurationFile } from "@getmonti/ravioli/build"
-const config = loadConfigurationFile("config/sentry.yml")
+import { loadFile } from "@getmonti/ravioli/build"
+const config = loadFile("config/sentry.yml")
 
 export { config }
 

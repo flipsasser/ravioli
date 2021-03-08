@@ -2,7 +2,9 @@
 *.log
 *.sqlite3
 .bundle/
+.yardoc/
 coverage/
+doc/
 dist/
 node_modules
 pkg/

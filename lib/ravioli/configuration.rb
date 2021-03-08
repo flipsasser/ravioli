@@ -5,20 +5,17 @@ require "ostruct"
 
 module Ravioli
   class Configuration < OpenStruct
-    attr_reader :key_path
-
     def initialize(attributes = {})
       super({})
       @key_path = attributes.delete(:key_path)
       append(attributes)
     end
 
-    # def ==(other)
-    #   other = other.table if other.respond_to?(:table)
-    #   other == table
-    # end
-
+    # Convert a hash to accessors and nested {Ravioli::Configuration} instances.
+    #
+    # @param [Hash, #each] key-value pairs to be converted to accessors
     def append(attributes = {})
+      return unless attributes.respond_to?(:each)
       attributes.each do |key, value|
         self[key.to_sym] = cast(key.to_sym, value)
       end
@@ -53,6 +50,8 @@ module Ravioli
     end
 
     private
+
+    attr_reader :key_path
 
     def build(keys, attributes = {})
       attributes[:key_path] = key_path_for(keys)

@@ -33,7 +33,7 @@ RSpec.describe Ravioli::Configuration do
 
     it "ensures nested sub-hashes keep track of their keypaths" do
       configuration.append(thing: {other_thing: {third_thing: true}})
-      expect(configuration.thing.other_thing.key_path).to eq(%i[thing other_thing])
+      expect(configuration.thing.other_thing.send(:key_path)).to eq(%i[thing other_thing])
     end
   end
 

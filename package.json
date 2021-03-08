@@ -6,7 +6,7 @@
   "repository": "git@github.com:flipsasser/ravioli.git",
   "author": "Flip Sasser <hello@flipsasser.com>",
   "license": "MIT",
-  "private": true,
+  "private": false,
   "files": [
     "dist/"
   ],
@@ -14,7 +14,7 @@
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json",
     "lint": "eslint -c .eslintrc.js src/**/*.ts",
     "prepare": "rm -rf dist/ && yarn build",
-    "prepublish": "yarn test && yarn lint",
+    "prepublish": "yarn lint && yarn test",
     "preversion": "yarn lint",
     "postversion": "git push && git push --tags",
     "test": "NODE_ENV=test mocha -r sucrase/register spec/**/*.spec.ts",
@@ -47,6 +47,8 @@
     "mocha": "^8.2.1",
     "nodemon": "^2.0.7",
     "prettier": "^2.2.1",
+    "sinon": "^9.2.4",
+    "sinon-chai": "^3.5.0",
     "sucrase": "^3.17.1",
     "typescript": "^4.1.3"
   },

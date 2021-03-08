@@ -29,6 +29,7 @@ AllCops:
     - "public/**/*"
     - "tmp/**/*"
     - "vendor/**/*"
+  NewCops: enable
 
 Rails/FilePath:
   EnforcedStyle: arguments
@@ -62,6 +63,10 @@ RSpec/ExampleLength:
     - spec/features/**/*
   Max: 50 # C'mon... we're testing large, nested hashes
 
+RSpec/Focus:
+  AutoCorrect: false
+  Enabled: true
+
 RSpec/MultipleExpectations:
   Exclude:
     - spec/controllers/**/*
@@ -69,6 +74,15 @@ RSpec/MultipleExpectations:
 
 RSpec/NestedGroups:
   Max: 4
+
+Style/Documentation:
+  Enabled: true
+
+Style/DocumentationMethod:
+  Enabled: true
+
+Style/DocumentDynamicEvalDefinition:
+  Enabled: true
 
 RSpec/SharedExamples:
   Enabled: false

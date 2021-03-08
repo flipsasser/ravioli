@@ -4,15 +4,16 @@ import { join } from "path"
 
 import { configuration } from "./configuration"
 import { getProjectRoot } from "./getProjectRoot"
-import { loadConfigurationFile } from "./loadConfigurationFile"
 import { loadCredentials } from "./loadCredentials"
+import { loadFile } from "./loadFile"
 
 // eslint-disable-next-line import/no-default-export
 export default configuration(() => {
   const splat = "{[!locales]**/*,*}.{json,yaml,yml}"
   // Set up some defaults with a staging flag
+  const production = process.env.NODE_ENV == "production"
   let config: any = {
-    staging: process.env.NODE_ENV == "production" && !!process.env.STAGING,
+    staging: production && !!process.env.STAGING,
   }
 
   // Load all config files in the `config/` directory we can
@@ -23,7 +24,7 @@ export default configuration(() => {
   }
 
   files.forEach(file => {
-    config = deepmerge(config, loadConfigurationFile(file, config))
+    config = deepmerge(config, loadFile(file, config))
   })
 
   // Load all the credentials files we can

@@ -8,7 +8,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   flat_key = "#{filetype}_test".to_sym
 
   it "loads env-keyed files given a symbol" do
-    builder.load_config_file(env_key)
+    builder.load_file(env_key)
     expect(configuration).to eq(build(
       env_key => {
         another_thing: false,
@@ -18,7 +18,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads flat files given a symbol" do
-    builder.load_config_file(flat_key)
+    builder.load_file(flat_key)
     expect(configuration).to eq(build(
       flat_key => {
         whatever: true,
@@ -28,7 +28,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads env-keyed files given a filename" do
-    builder.load_config_file("#{filetype}_env_test.#{filetype}")
+    builder.load_file("#{filetype}_env_test.#{filetype}")
     expect(configuration).to eq(build(
       env_key => {
         another_thing: false,
@@ -38,7 +38,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads flat files given a filename" do
-    builder.load_config_file("#{filetype}_test.#{filetype}")
+    builder.load_file("#{filetype}_test.#{filetype}")
     expect(configuration).to eq(build(
       flat_key => {
         whatever: true,
@@ -48,7 +48,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads env-keyed files given a relative path" do
-    builder.load_config_file("config/#{filetype}_env_test.#{filetype}")
+    builder.load_file("config/#{filetype}_env_test.#{filetype}")
     expect(configuration).to eq(build(
       env_key => {
         another_thing: false,
@@ -58,7 +58,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads flat files given a relative path" do
-    builder.load_config_file("config/#{filetype}_test.#{filetype}")
+    builder.load_file("config/#{filetype}_test.#{filetype}")
     expect(configuration).to eq(build(
       flat_key => {
         whatever: true,
@@ -68,7 +68,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads env-keyed files given a full path" do
-    builder.load_config_file(Rails.root.join("config", "#{filetype}_env_test.#{filetype}"))
+    builder.load_file(Rails.root.join("config", "#{filetype}_env_test.#{filetype}"))
     expect(configuration).to eq(build(
       env_key => {
         another_thing: false,
@@ -78,7 +78,7 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 
   it "loads flat files given a full path" do
-    builder.load_config_file(Rails.root.join("config", "#{filetype}_test.#{filetype}"))
+    builder.load_file(Rails.root.join("config", "#{filetype}_test.#{filetype}"))
     expect(configuration).to eq(build(
       flat_key => {
         whatever: true,
@@ -88,14 +88,14 @@ RSpec.shared_examples :parses_various_inputs do |filetype|
   end
 end
 
-RSpec.describe Ravioli::Builder, "#load_config_file" do
+RSpec.describe Ravioli::Builder, "#load_file" do
   let(:builder) { described_class.new(strict: true) }
   let(:configuration) { builder.build! }
 
   describe "with a non-existent file" do
     it "warns the user when not in strict mode" do
       expect {
-        builder.load_config_file("nothing.json")
+        builder.load_file("nothing.json")
       }.to raise_error(Ravioli::BuildError)
     end
   end
@@ -103,7 +103,7 @@ RSpec.describe Ravioli::Builder, "#load_config_file" do
   describe "with an un-parseable file" do
     it "warns the user when not in strict mode" do
       expect {
-        builder.load_config_file("config/routes.rb")
+        builder.load_file("config/routes.rb")
       }.to raise_error(an_instance_of(Ravioli::BuildError).and(having_attributes(cause: an_instance_of(Ravioli::ParseError))))
     end
   end

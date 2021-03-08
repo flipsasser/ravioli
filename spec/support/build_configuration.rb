@@ -13,4 +13,9 @@ end
 
 RSpec.configure do |config|
   config.include BuildConfiguration
+
+  config.before do
+    ENV["STAGING"] = nil
+    Ravioli.configurations.clear
+  end
 end

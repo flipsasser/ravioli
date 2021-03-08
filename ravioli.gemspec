@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "Ravioli combines all of your app's runtime configuration into a unified, simple interface. It automatically loads and combines YAML config files, encrypted Rails credentials, and ENV vars so you can focus on writing code and not on where configuration comes from"
   spec.homepage = "https://github.com/flipsasser/ravioli"
   spec.license = "MIT"
-  spec.required_ruby_version = Gem::Requirement.new(">= 2.3.0")
+  spec.required_ruby_version = Gem::Requirement.new(">= 2.4.0")
 
   # spec.metadata["allowed_push_host"] = "https://rubygems.org/"
 
@@ -29,17 +29,20 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "activesupport", "~> 6.0", ">= 6.0.3.1"
 
+  spec.add_development_dependency "guard"
+  spec.add_development_dependency "guard-rspec"
+  spec.add_development_dependency "guard-rubocop"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "rails", "~> 6"
   spec.add_development_dependency "rspec", "~> 3.9"
   spec.add_development_dependency "rspec-rails"
-  spec.add_development_dependency "rubocop", "~> 0.8"
+  spec.add_development_dependency "rubocop", ">= 1.0"
   spec.add_development_dependency "rubocop-ordered_methods", "~> 0.6"
-  spec.add_development_dependency "rubocop-performance", "~> 1.5.2"
-  spec.add_development_dependency "rubocop-rails", "~> 2.5.2"
-  spec.add_development_dependency "rubocop-rspec", "~> 1.39"
+  spec.add_development_dependency "rubocop-performance", ">= 1.5"
+  spec.add_development_dependency "rubocop-rails", ">= 2.5.0"
+  spec.add_development_dependency "rubocop-rspec", ">= 2.0"
   spec.add_development_dependency "simplecov"
   spec.add_development_dependency "sqlite3"
-  spec.add_development_dependency "standard", "~> 0.4"
+  spec.add_development_dependency "standard", "~> 0.13.0"
   spec.add_development_dependency "yard", "~> 0.9"
 end

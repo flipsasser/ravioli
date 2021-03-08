@@ -207,7 +207,7 @@ mailjet:
   # ...the contents of mailjet.json
 ```
 
-**NOTE THAT APP.YML GOT LOADED INTO THE ROOT OF THE CONFIGURATION!** This is because the automatic loading system assumes you want some configuration values that aren't nested. It effectively calls [`load_configuration_file(filename, key: File.basename(filename) != "app")`](#load_configuration_file), which ensures that, for example, the values in `config/mailjet.json` get loaded under `Rails.config.mailjet` while the valuaes in `config/app.yml` get loaded directly into `Rails.config`.
+**NOTE THAT APP.YML GOT LOADED INTO THE ROOT OF THE CONFIGURATION!** This is because the automatic loading system assumes you want some configuration values that aren't nested. It effectively calls [`load_file(filename, key: File.basename(filename) != "app")`](#load_file), which ensures that, for example, the values in `config/mailjet.json` get loaded under `Rails.config.mailjet` while the valuaes in `config/app.yml` get loaded directly into `Rails.config`.
 
 ### 3. Loads and combines encrypted credentials
 
@@ -225,7 +225,7 @@ This allows you to use your secure credentials stores without duplicating inform
 def Rails.config
   @config ||= Ravioli.build(strict: Rails.env.production?) do |config|
     config.add_staging_flag!
-    config.auto_load_config_files!
+    config.auto_load_files!
     config.auto_load_credentials!
   end
 end
@@ -243,7 +243,7 @@ The best way to build your own configuration is by calling `Ravioli.build`. It w
 
 ```ruby
 configuration = Ravioli.build do |config|
-  config.load_configuration_file("whatever.yml")
+  config.load_file("whatever.yml")
   config.whatever = {things: true}
 end
 ```
@@ -303,7 +303,7 @@ end
 ### `add_staging_flag!`
 
 
-### `load_config_file`
+### `load_file`
 
 Let's imagine we have this config file:
 
@@ -329,24 +329,24 @@ In an initializer, generate your Ravioli instance and load it up:
 ```ruby
 # config/initializers/_ravioli.rb`
 Config = Ravioli.build do
-  load_config_file(:mailjet) # given a symbol, it automatically assumes you meant `config/mailjet.yml`
-  load_config_file("config/mailjet") # same as above
-  load_config_file("lib/mailjet/config") # looks for `Rails.root.join("lib", "mailjet", "config.yml")
+  load_file(:mailjet) # given a symbol, it automatically assumes you meant `config/mailjet.yml`
+  load_file("config/mailjet") # same as above
+  load_file("lib/mailjet/config") # looks for `Rails.root.join("lib", "mailjet", "config.yml")
 end
 ```
 
 `config/initializers/_ravioli.rb`
 
 ```ruby
-Config = Ravioli.build do
+Config = Ravioli.build do |config|
   %i[new_relic sentry google].each do |service|
-    load_config_file(service)
+    config.load_file(service)
   end
 
-  load_credentials # just load the base credentials file
-  load_credentials("credentials/production") if Rails.env.production? # add production overrides when appropriate
+  config.load_credentials # just load the base credentials file
+  config.load_credentials("credentials/production") if Rails.env.production? # add production overrides when appropriate
 
-  self.staging = File.exists?("./staging.txt") # technically you could do this ... I don't know why you would, but technically you could
+  config.staging = File.exists?("./staging.txt") # technically you could do this ... I don't know why you would, but technically you could
 end
 ```
 

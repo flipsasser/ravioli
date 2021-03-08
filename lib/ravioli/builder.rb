@@ -4,15 +4,56 @@ require "active_support/all"
 require_relative "configuration"
 
 module Ravioli
-  # The Builder clas provides a simple interface for building a Ravioli configuration. It has
+  # The Builder class provides a simple interface for building a Ravioli configuration. It has
   # methods for loading configuration files and encrypted credentials, and forwards direct
   # configuration on to the configuration instance. This allows us to keep a clean separation of
   # concerns (builder: loads configuration details; configuration: provides access to information
   # in memory).
+  #
+  # == ENV variables and encrypted credentials keys
+  #
+  # <table><thead><tr><th>File</th><th>First it tries...</th><th>Then it tries...</th></tr></thead><tbody><tr><td>
+  #
+  # `config/credentials.yml.enc`
+  #
+  # </td><td>
+  #
+  # `ENV["RAILS_BASE_KEY"]`
+  #
+  # </td><td>
+  #
+  # `ENV["RAILS_MASTER_KEY"]`
+  #
+  # </td></tr><tr><td>
+  #
+  # `config/credentials/production.yml.enc`
+
+  # </td><td>
+  #
+  # `ENV["RAILS_PRODUCTION_KEY"]`
+  #
+  # </td><td>
+  #
+  # `ENV["RAILS_MASTER_KEY"]`
+  #
+  # </td></tr><tr><td>
+  #
+  # `config/credentials/staging.yml.enc` (only if running on staging)
+  #
+  # </td><td>
+  #
+  # `ENV["RAILS_STAGING_KEY"]`
+  #
+  # </td><td>
+  #
+  # `ENV["RAILS_MASTER_KEY"]`
+  #
+  # </td></tr></tbody></table>
   class Builder
     def initialize(class_name: "Configuration", namespace: nil, strict: false)
       configuration_class = if namespace.present?
         namespace.class_eval <<-EOC, __FILE__, __LINE__ + 1
+          # class Configuration < Ravioli::Configuration; end
           class #{class_name.to_s.classify} < Ravioli::Configuration; end
         EOC
         namespace.const_get(class_name)
@@ -23,8 +64,11 @@ module Ravioli
       @configuration = configuration_class.new
     end
 
-    # Automatically infer a `staging?` status
+    # Automatically infer a `staging` status from the current environment
+    #
+    # @param is_staging [boolean, #present?] whether or not the current environment is considered a staging environment
     def add_staging_flag!(is_staging = Rails.env.production? && ENV["STAGING"].present?)
+      is_staging = is_staging.present?
       configuration.staging = is_staging
       Rails.env.class_eval <<-EOC, __FILE__, __LINE__ + 1
         def staging?
@@ -37,15 +81,20 @@ module Ravioli
       is_staging
     end
 
-    # Load YAML or JSON files in config/**/* (except for locales)
-    def auto_load_config_files!
+    # Iterates through the config directory (including nested folders) and
+    # calls {Ravioli::Builder::load_file} on each JSON or YAML file it
+    # finds. Ignores `config/locales`.
+    def auto_load_files!
       config_dir = Rails.root.join("config")
       Dir[config_dir.join("{[!locales/]**/*,*}.{json,yaml,yml}")].each do |config_file|
-        load_config_file(config_file, key: !File.basename(config_file, File.extname(config_file)).casecmp("app").zero?)
+        basename = File.basename(config_file, File.extname(config_file))
+        dirname = File.dirname(config_file)
+        key = %w[app application].exclude?(basename) && dirname != config_dir
+        load_file(config_file, key: key)
       end
     end
 
-    # Load config/credentials**/*.yml.enc files (assuming we can find a key)
+    # Loads Rails encrypted credentials that it can. Checks for corresponding private key files, or ENV vars based on the {Ravioli::Builder credentials preadmlogic}
     def auto_load_credentials!
       # Load the base config
       load_credentials(key_path: "config/master.key", env_name: "base")
@@ -59,11 +108,13 @@ module Ravioli
 
     # When the builder is done working, lock the configuration and return it
     def build!
-      configuration.freeze
+      configuration.freeze.tap do |config|
+        Ravioli.configurations.push(config)
+      end
     end
 
-    # Load a config file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
-    def load_config_file(path, options = {})
+    # Load a file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
+    def load_file(path, options = {})
       config = parse_config_file(path, options)
       configuration.append(config) if config.present?
     rescue => error
@@ -75,7 +126,7 @@ module Ravioli
       credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
       configuration.append(credentials) if credentials.present?
     rescue => error
-      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error
+      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error, critical: false
       {}
     end
 
@@ -119,7 +170,7 @@ module Ravioli
       when ".yml", ".yaml"
         parse_yaml_config_file(path)
       else
-        raise ParseError.new("#{Ravioli::NAME} doesn't know how to parse #{path}")
+        raise ParseError.new("Ravioli doesn't know how to parse #{path}")
       end
 
       # At least expect a hash to be returned from the loaded config file
@@ -152,8 +203,7 @@ module Ravioli
       options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
 
       path = path_to_config_file_path(path, extnames: "yml.enc")
-      credentials = Rails.application.encrypted(path, options)&.config || {}
-      credentials
+      Rails.application.encrypted(path, **options)&.config || {}
     end
 
     def parse_json_config_file(path)
@@ -192,10 +242,10 @@ module Ravioli
       path
     end
 
-    def warn(message, error = $!)
-      message = "[#{Ravioli::NAME}] #{message}"
+    def warn(message, error = $!, critical: true)
+      message = "[Ravioli] #{message}"
       message = "#{message}:\n\n#{error.cause.inspect}" if error&.cause.present?
-      if @strict
+      if @strict && critical
         raise BuildError.new(message, error)
       else
         Rails.logger.warn(message) if defined? Rails
@@ -204,6 +254,7 @@ module Ravioli
     end
   end
 
+  # Error raised when Ravioli is in strict mode. Includes the original error for context.
   class BuildError < StandardError
     def initialize(message, cause = nil)
       super message
@@ -214,5 +265,7 @@ module Ravioli
       @cause || super
     end
   end
+
+  # Error raised when Ravioli encounters a problem parsing a file
   class ParseError < StandardError; end
 end
