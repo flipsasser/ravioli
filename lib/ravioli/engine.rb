@@ -3,7 +3,7 @@
 module Ravioli
   class Engine < ::Rails::Engine
     # Bootstrap Ravioli onto the Rails app
-    initializer "ravioli", before: :load_config_initializers do |app|
+    initializer "ravioli", before: :load_environment_config do |app|
       Rails.extend Ravioli::RailsConfig unless Rails.respond_to?(:config)
     end
   end

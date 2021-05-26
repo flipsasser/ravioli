@@ -35,7 +35,7 @@ key = Rails.config.dig!(:thing, :api_key)
 -->
 1. Add `gem "ravioli"` to your `Gemfile`
 2. Run `bundle install`
-3. Add an initializer (totally optional): `rails generate ravioli:install` - Ravioli will do **everything** automatically for you if you skip this step, because I aim to *please*
+3. Add an initializer (totally optional): `rails generate ravioli:install` - Ravioli will do **everything** automatically for you if you skip this step, because I'm here to put a little meat on your bones.
 
 ## Usage
 
@@ -243,16 +243,16 @@ The best way to build your own configuration is by calling `Ravioli.build`. It w
 
 ```ruby
 configuration = Ravioli.build do |config|
-  config.load_file("whatever.yml")
+  config.load_file("things.yml")
   config.whatever = {things: true}
 end
 ```
 
-This will yield a configured instance of `Ravioli::Configuration` with structure
+This will return a configured instance of `Ravioli::Configuration` with structure
 
 ```yaml
-rubocop:
-  # ...the contents of whatever.yml
+things:
+  # ...the contents of things.yml
 whatever:
   things: true
 ```

@@ -18,7 +18,12 @@ module Ravioli
     # @param class_name [String] the name of the namespace's Configuration class
     # @param strict [boolean] whether or not the Builder instance should throw errors when there are errors loading configuration files or encrypted credentials
     def build(namespace: nil, class_name: "Configuration", strict: false, &block)
-      builder = Builder.new(class_name: class_name, namespace: namespace, strict: strict)
+      builder = Builder.new(
+        class_name: class_name,
+        hijack: true,
+        namespace: namespace,
+        strict: strict,
+      )
       yield builder if block
       builder.build!
     end

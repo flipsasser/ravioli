@@ -37,6 +37,10 @@ module Ravioli
       fetch(*keys) { raise KeyMissingError.new("Could not find value at key path #{keys.inspect}") }
     end
 
+    def delete(key)
+      table.delete(key.to_s)
+    end
+
     def fetch(*keys)
       dig(*keys) || yield
     end

@@ -5,4 +5,4 @@ test:
   another_thing: false
 
 development:
-  another_thing: true
+  another_thing: <%= Rails.config.whatever %>

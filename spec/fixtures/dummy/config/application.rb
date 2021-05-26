@@ -16,6 +16,7 @@ require "sprockets/railtie"
 # require "rails/test_unit/railtie"
 
 Bundler.require(*Rails.groups)
+load "ravioli.rb"
 
 module Dummy
   class Application < Rails::Application

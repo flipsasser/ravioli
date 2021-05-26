@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "active_support/all"
+require "erb"
 require_relative "configuration"
 
 module Ravioli
@@ -50,7 +51,7 @@ module Ravioli
   #
   # </td></tr></tbody></table>
   class Builder
-    def initialize(class_name: "Configuration", namespace: nil, strict: false)
+    def initialize(class_name: "Configuration", hijack: false, namespace: nil, strict: false)
       configuration_class = if namespace.present?
         namespace.class_eval <<-EOC, __FILE__, __LINE__ + 1
           # class Configuration < Ravioli::Configuration; end
@@ -62,6 +63,16 @@ module Ravioli
       end
       @strict = !!strict
       @configuration = configuration_class.new
+      @reload_credentials = Set.new
+      @reload_paths = Set.new
+      @hijack = !!hijack
+
+      if @hijack
+        # Put this builder on the configurations stack - it will intercept setters on the underyling
+        # configuration object as it loads files, and mark those files as needing a reload once
+        # loading is complete
+        Ravioli.configurations.push(self)
+      end
     end
 
     # Automatically infer a `staging` status from the current environment
@@ -87,10 +98,7 @@ module Ravioli
     def auto_load_files!
       config_dir = Rails.root.join("config")
       Dir[config_dir.join("{[!locales/]**/*,*}.{json,yaml,yml}")].each do |config_file|
-        basename = File.basename(config_file, File.extname(config_file))
-        dirname = File.dirname(config_file)
-        key = %w[app application].exclude?(basename) && dirname != config_dir
-        load_file(config_file, key: key)
+        auto_load_file(config_file)
       end
     end
 
@@ -108,9 +116,19 @@ module Ravioli
 
     # When the builder is done working, lock the configuration and return it
     def build!
-      configuration.freeze.tap do |config|
-        Ravioli.configurations.push(config)
+      if @hijack
+        # Replace this builder with the underlying configuration on the configurations stack...
+        Ravioli.configurations.delete(self)
+        Ravioli.configurations.push(configuration)
+
+        # ...and then reload any config file that referenced the configuration the first time it was
+        # loaded!
+        @reload_paths.each do |path|
+          auto_load_file(path)
+        end
       end
+
+      configuration.freeze
     end
 
     # Load a file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
@@ -137,6 +155,13 @@ module Ravioli
 
     attr_reader :configuration
 
+    def auto_load_file(config_file)
+      basename = File.basename(config_file, File.extname(config_file))
+      dirname = File.dirname(config_file)
+      key = %w[app application].exclude?(basename) && dirname != config_dir
+      load_file(config_file, key: key)
+    end
+
     def extract_environmental_config(config)
       # Check if the config hash is keyed by environment - if not, just return it as-is. It's
       # considered "keyed by environment" if it contains ONLY env-specific keys.
@@ -156,12 +181,23 @@ module Ravioli
     # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(*args, &block)
+      if @current_path
+        @reload_paths.add(@current_path)
+      end
+
+      if @current_credentials
+        @reload_credentials.add(@current_credentials)
+      end
+
       configuration.send(*args, &block)
     end
     # rubocop:enable Style/MissingRespondToMissing
     # rubocop:enable Style/MethodMissingSuper
 
     def parse_config_file(path, options = {})
+      # Stash a reference to the file we're parsing, so we can reload it later if it tries to use
+      # the configuration object
+      @current_path = path
       path = path_to_config_file_path(path)
 
       config = case path.extname.downcase
@@ -173,6 +209,8 @@ module Ravioli
         raise ParseError.new("Ravioli doesn't know how to parse #{path}")
       end
 
+      # We are no longer loading anything
+      @current_path = nil
       # At least expect a hash to be returned from the loaded config file
       return {} unless config.is_a?(Hash)
 
@@ -196,6 +234,7 @@ module Ravioli
     end
 
     def parse_credentials(path, key_path: path, env_name: path.split("/").last)
+      @current_credentials = path
       env_name = env_name.to_s
       env_name = "RAILS_#{env_name.upcase}_KEY" unless env_name.upcase == env_name
       key_path = path_to_config_file_path(key_path, extnames: "key", quiet: true)
@@ -203,7 +242,9 @@ module Ravioli
       options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
 
       path = path_to_config_file_path(path, extnames: "yml.enc")
-      Rails.application.encrypted(path, **options)&.config || {}
+      (Rails.application.encrypted(path, **options)&.config || {}).tap do
+        @current_credentials = nil
+      end
     end
 
     def parse_json_config_file(path)
@@ -212,7 +253,6 @@ module Ravioli
     end
 
     def parse_yaml_config_file(path)
-      require "erb"
       contents = File.read(path)
       erb = ERB.new(contents).tap { |renderer| renderer.filename = path.to_s }
       YAML.safe_load(erb.result, aliases: true)
