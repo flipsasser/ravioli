@@ -255,7 +255,7 @@ module Ravioli
     def parse_yaml_config_file(path)
       contents = File.read(path)
       erb = ERB.new(contents).tap { |renderer| renderer.filename = path.to_s }
-      YAML.safe_load(erb.result, aliases: true)
+      YAML.safe_load(erb.result, [Symbol], aliases: true)
     end
 
     def path_to_config_file_path(path, extnames: EXTNAMES, quiet: false)
