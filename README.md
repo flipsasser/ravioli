@@ -1,6 +1,5 @@
 # Ravioli.rb 🍝
 
-
 **Grab a fork and twist your configuration spaghetti in a single, delicious dumpling!**
 
 Ravioli combines all of your app's runtime configuration into a unified, simple interface. **It combines YAML or JSON configuration files, encrypted Rails credentials, and ENV vars into one easy-to-consume interface** so you can focus on writing code and not on where configuration comes from.
