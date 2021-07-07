@@ -31,7 +31,7 @@ export default configuration(() => {
   config = deepmerge(
     config,
     loadCredentials("config/credentials", {
-      envKey: "base",
+      envKeys: ["master", "base"],
       keyPath: "config/master.key",
     }),
   )
@@ -40,7 +40,7 @@ export default configuration(() => {
   config = deepmerge(
     config,
     loadCredentials(`config/credentials/${env}`, {
-      envKey: "master",
+      envKeys: [env, "master"],
       keyPath: `config/credentials/${env}.key`,
     }),
   )

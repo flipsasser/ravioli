@@ -5,7 +5,7 @@ import { parseYAML } from "./parseYAML"
 import { resolveConfigFilePath } from "./resolveConfigFilePath"
 
 interface LoadCredentialsOptions {
-  envKey?: string
+  envKeys?: string[]
   keyPath?: string
 }
 
@@ -19,15 +19,8 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
   }
 
   // Determine which key to use - either an ENV variable or a file - and generate a secret from it
-  const contents = readFileSync(path, "ascii")
-  const [data, iv, _] = contents.split("--").map(part => Buffer.from(part, "base64"))
-
-  let { envKey, keyPath } = options
-  if (envKey && !/_/.test(envKey)) {
-    envKey = `RAILS_${envKey.toUpperCase()}_KEY`
-  }
-
-  let key = envKey && process.env[envKey]
+  const { envKeys, keyPath } = options
+  let key = firstKeyFromEnv(envKeys)
   if (!key) {
     const keyFile = resolveConfigFilePath(keyPath, { extnames: "key" })
     if (!existsSync(keyFile)) {
@@ -37,7 +30,10 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
     key = readFileSync(keyFile, "ascii")
   }
 
-  // Decrypt the file
+  // Load and decrypt the file using our key
+  const contents = readFileSync(path, "ascii")
+  const [data, iv, _] = contents.split("--").map(part => Buffer.from(part, "base64"))
+
   const secret = Buffer.from(key, "hex")
   const cipher = createCipheriv("aes-128-gcm", secret, iv)
   let decrypted = Buffer.concat([cipher.update(data), cipher.final()])
@@ -69,4 +65,20 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
 
   // Neato - parse the YAML
   return parseYAML(decrypted.toString()) || {}
+}
+
+function firstKeyFromEnv(keys: string[]): string {
+  if (!keys) {
+    return
+  }
+
+  keys = keys.reduce((reducedKeys, key) => {
+    if (key) {
+      reducedKeys.push(key && !/RAILS_/i.test(key) ? `RAILS_${key.toUpperCase()}_KEY` : key)
+    }
+
+    return reducedKeys
+  }, [] as string[])
+
+  return process.env[keys.find(key => process.env[key])]
 }

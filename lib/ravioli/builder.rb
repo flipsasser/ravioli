@@ -79,17 +79,10 @@ module Ravioli
     #
     # @param is_staging [boolean, #present?] whether or not the current environment is considered a staging environment
     def add_staging_flag!(is_staging = Rails.env.production? && ENV["STAGING"].present?)
+      require_relative "./staging_inquirer"
       is_staging = is_staging.present?
       configuration.staging = is_staging
-      Rails.env.class_eval <<-EOC, __FILE__, __LINE__ + 1
-        def staging?
-          config = Rails.try(:config)
-          return false unless config&.is_a?(Ravioli::Configuration)
-
-          config.staging?
-        end
-      EOC
-      is_staging
+      Rails.env.class.prepend Ravioli::StagingInquirer
     end
 
     # Iterates through the config directory (including nested folders) and
@@ -105,13 +98,13 @@ module Ravioli
     # Loads Rails encrypted credentials that it can. Checks for corresponding private key files, or ENV vars based on the {Ravioli::Builder credentials preadmlogic}
     def auto_load_credentials!
       # Load the base config
-      load_credentials(key_path: "config/master.key", env_name: "base")
+      load_credentials(key_path: "config/master.key", env_names: %w[master base])
 
       # Load any environment-specific configuration on top of it
-      load_credentials("config/credentials/#{Rails.env}", key_path: "config/credentials/#{Rails.env}.key", env_name: "master")
+      load_credentials("config/credentials/#{Rails.env}", key_path: "config/credentials/#{Rails.env}.key", env_names: [Rails.env, "master"])
 
       # Apply staging configuration on top of THAT, if need be
-      load_credentials("config/credentials/staging", key_path: "config/credentials/staging.key") if configuration.staging?
+      load_credentials("config/credentials/staging", env_names: %w[staging master], key_path: "config/credentials/staging.key") if configuration.staging?
     end
 
     # When the builder is done working, lock the configuration and return it
@@ -140,11 +133,19 @@ module Ravioli
     end
 
     # Load secure credentials using a key either from a file or the ENV
-    def load_credentials(path = "credentials", key_path: path, env_name: path.split("/").last)
-      credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
-      configuration.append(credentials) if credentials.present?
-    rescue => error
-      warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error, critical: false
+    def load_credentials(path = "credentials", key_path: path, env_names: path.split("/").last)
+      error = nil
+      env_names = Array(env_names).map { |env_name| parse_env_name(env_name) }
+      env_names.each do |env_name|
+        credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
+        if credentials.present?
+          configuration.append(credentials)
+          return credentials
+        end
+      rescue => error
+        warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error, critical: false
+      end
+
       {}
     end
 
@@ -233,13 +234,17 @@ module Ravioli
       {name => config}
     end
 
+    def parse_env_name(env_name)
+      env_name = env_name.to_s
+      env_name.match?(/^RAILS_/) ? env_name : "RAILS_#{env_name.upcase}_KEY"
+    end
+
     def parse_credentials(path, key_path: path, env_name: path.split("/").last)
       @current_credentials = path
-      env_name = env_name.to_s
-      env_name = "RAILS_#{env_name.upcase}_KEY" unless env_name.upcase == env_name
+      env_name = parse_env_name(env_name)
       key_path = path_to_config_file_path(key_path, extnames: "key", quiet: true)
-      options = {key_path: key_path}
-      options[:env_key] = ENV[env_name].present? ? env_name : SecureRandom.hex(6)
+      options = {key_path: key_path.to_s}
+      options[:env_key] = ENV[env_name].present? ? env_name : "__RAVIOLI__#{SecureRandom.hex(6)}"
 
       path = path_to_config_file_path(path, extnames: "yml.enc")
       (Rails.application.encrypted(path, **options)&.config || {}).tap do
@@ -288,7 +293,7 @@ module Ravioli
       if @strict && critical
         raise BuildError.new(message, error)
       else
-        Rails.logger.warn(message) if defined? Rails
+        Rails.logger.try(:warn, message) if defined? Rails
         $stderr.write message # rubocop:disable Rails/Output
       end
     end

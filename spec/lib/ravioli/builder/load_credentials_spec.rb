@@ -7,13 +7,9 @@ RSpec.describe Ravioli::Builder, "#load_credentials" do
   let(:builder) { described_class.new(strict: false) }
   let(:configuration) { builder.build! }
 
-  before do
-    ENV["RSPEC"] = "true"
-  end
-
   it "loads the root credentials file with a key file" do
     ENV["RAILS_MASTER_KEY"] = nil
-    builder.load_credentials("credentials", key_path: "master.key", env_name: "master")
+    builder.load_credentials("credentials", key_path: "master.key", env_names: "master")
     expect(configuration).to eq(build(
       name: "Dummy McAppface",
       host: "http://localhost:3000/",
@@ -23,7 +19,7 @@ RSpec.describe Ravioli::Builder, "#load_credentials" do
 
   it "loads the root credentials file with an interpolated ENV key" do
     ENV["RAILS_MASTER_KEY"] = File.read(Rails.root.join("config", "master.key"))
-    builder.load_credentials("credentials", key_path: "/nothing.key", env_name: "master")
+    builder.load_credentials("credentials", key_path: "/nothing.key", env_names: "master")
     expect(configuration).to eq(build(
       name: "Dummy McAppface",
       host: "http://localhost:3000/",
@@ -33,7 +29,7 @@ RSpec.describe Ravioli::Builder, "#load_credentials" do
 
   it "loads the root credentials file with a full ENV key name" do
     ENV["RAILS_MASTER_KEY"] = File.read(Rails.root.join("config", "master.key"))
-    builder.load_credentials("credentials", key_path: "/dev/null", env_name: "RAILS_MASTER_KEY")
+    builder.load_credentials("credentials", key_path: "/dev/null", env_names: "RAILS_MASTER_KEY")
     expect(configuration).to eq(build(
       name: "Dummy McAppface",
       host: "http://localhost:3000/",
@@ -43,7 +39,7 @@ RSpec.describe Ravioli::Builder, "#load_credentials" do
 
   it "doesn't load credentials without a key file or an ENV variable" do
     ENV["RAILS_MASTER_KEY"] = nil
-    builder.load_credentials("credentials", key_path: "/dev/null", env_name: "nothing")
+    builder.load_credentials("credentials", key_path: "/dev/null", env_names: "nothing")
     expect(configuration).to eq(empty)
   end
 end

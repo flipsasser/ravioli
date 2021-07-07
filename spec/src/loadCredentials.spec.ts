@@ -10,7 +10,7 @@ describe("loadCredentials", () => {
     delete process.env.RAILS_MASTER_KEY
     expect(
       loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
-        envKey: "master",
+        envKeys: ["master"],
         keyPath: "spec/fixtures/dummy/config/master.key",
       }),
     ).to.deep.eq({
@@ -27,7 +27,7 @@ describe("loadCredentials", () => {
     ).toString()
     expect(
       loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
-        envKey: "master",
+        envKeys: ["master"],
         keyPath: "/nothing.key",
       }),
     ).to.deep.eq({
@@ -44,7 +44,7 @@ describe("loadCredentials", () => {
     ).toString()
     expect(
       loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
-        envKey: "RAILS_MASTER_KEY",
+        envKeys: ["RAILS_MASTER_KEY"],
         keyPath: "/dev/null",
       }),
     ).to.deep.eq({
@@ -62,7 +62,7 @@ describe("loadCredentials", () => {
     ).toString()
     expect(
       loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
-        envKey: "nothing",
+        envKeys: ["nothing"],
         keyPath: "/dev/null",
       }),
     ).to.deep.eq({})
