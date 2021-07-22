@@ -216,7 +216,7 @@ Ravioli will then check for [encrypted credentials](https://guides.rubyonrails.o
 2. Then, it loads and applies `config/credentials/RAILS_ENV.yml.enc` over top of what it has already loaded
 3. Finally, IF `Rails.config.staging?` IS TRUE, it loads and applies `config/credentials/staging.yml.enc`
 
-This allows you to use your secure credentials stores without duplicating information; you can simply layer environment-specific values over top of
+This allows you to use your secure credentials stores without duplicating information; you can simply layer environment-specific values over top of a "root" `config/credentials.yml.enc` file.
 
 ### All put together, it does this:
 
@@ -417,47 +417,47 @@ staging:
 
 ### Encryption keys in ENV
 
-Because Ravioli merges environment-specific credentials over top of the root credentials file, you'll need to provide encryption keys for two (or, if you have a staging setup, three) different files in ENV vars. As such, Ravioli looks for decryption keys in a fallback-specific way. Here's where it looks for each file:
+Here are a few facts about credentials in Rails and how they're deployed:
 
-<table><thead><tr><th>File</th><th>First it tries...</th><th>Then it tries...</th></tr></thead><tbody><tr><td>
+1. Rails assumes you want to use the file that matches your environment, if it exists (e.g. `RAILS_ENV=production` will look for `config/credentials/production.yml.enc`)
+2. Rails does _not_ support environment-specfic keys, but it _does_ now aggressively loads credentials at boot time.
 
-`config/credentials.yml.enc`
+**This means `RAILS_MASTER_KEY` MUST be the decryption key for your environment-specific credential file, if one exists.**
 
-</td><td>
+But, because Ravioli merges environment-specific credentials over top of the root credentials file, you'll need to provide encryption keys for two (or, if you have a staging setup, three) different files in ENV vars. As such, Ravioli looks for decryption keys in a way that mirrors Rails' assumptions, but allows progressive layering of credentials.
 
-`ENV["RAILS_BASE_KEY"]`
+Here are a few examples
 
-</td><td>
+<table><thead><tr><th>File</th><th>First it tries...</th><th>Then it tries...</th></tr></thead><tbody>
 
-`ENV["RAILS_MASTER_KEY"]`
+<tr>
+	<td><code>config/credentials.yml.enc</code></td>
+	<td><code>ENV["RAILS_MASTER_KEY"]</code></td>
+	<td><code>ENV["RAILS_ROOT_KEY"]</code></td>
+</tr>
 
-</td></tr><tr><td>
+<tr>
+	<td><code>config/credentials/#{RAILS_ENV}.yml.enc</code></td>
+	<td><code>ENV["RAILS_MASTER_KEY"]</code></td>
+	<td><code>ENV["RAILS_#{RAILS_ENV}_KEY"]</code></td>
+</tr>
 
-`config/credentials/production.yml.enc`
 
-</td><td>
+<tr>
+	<td><code>config/credentials/staging.yml.enc</code></td>
+	<td><code>ENV["RAILS_MASTER_KEY"]</code></td>
+	<td><code>ENV["RAILS_STAGING_KEY"]</code></td>
+</tr>
 
-`ENV["RAILS_PRODUCTION_KEY"]`
-
-</td><td>
-
-`ENV["RAILS_MASTER_KEY"]`
-
-</td></tr><tr><td>
-
-`config/credentials/staging.yml.enc` (only if running on staging)
-
-</td><td>
-
-`ENV["RAILS_STAGING_KEY"]`
-
-</td><td>
-
-`ENV["RAILS_MASTER_KEY"]`
-
-</td></tr></tbody></table>
+</tbody></table>
 
 Credentials are loaded in that order, too, so that you can have a base setup on `config/credentials.yml.enc`, overlay that with production-specific stuff from `config/credentials/production.yml.enc`, and then short-circuit or redirect some stuff in `config/credentials/staging.yml.enc` for staging environments.
+
+#### TLDR:
+
+1. Set `RAILS_MASTER_KEY` to the key for your specific environment
+2. Set `RAILS_STAGING_KEY` to the key for your staging credentials (if deploying to staging AND you have staging-specific credentials)
+3. Set `RAILS_ROOT_KEY` to the key for your root credentials (if you have anything in `config/credentials.yml.enc`)
 
 ## License
 

@@ -97,14 +97,28 @@ module Ravioli
 
     # Loads Rails encrypted credentials that it can. Checks for corresponding private key files, or ENV vars based on the {Ravioli::Builder credentials preadmlogic}
     def auto_load_credentials!
-      # Load the base config
-      load_credentials(key_path: "config/master.key", env_names: %w[master base])
+      # Load the root config (supports using the master key or `RAILS_ROOT_KEY`)
+      load_credentials(
+        key_path: "config/master.key",
+        env_names: %w[master root],
+      )
 
-      # Load any environment-specific configuration on top of it
-      load_credentials("config/credentials/#{Rails.env}", key_path: "config/credentials/#{Rails.env}.key", env_names: [Rails.env, "master"])
+      # Load any environment-specific configuration on top of it. Since Rails will try
+      # `RAILS_MASTER_KEY` from the environment, we assume the same
+      load_credentials(
+        "config/credentials/#{Rails.env}",
+        key_path: "config/credentials/#{Rails.env}.key",
+        env_names: ["master"],
+      )
 
       # Apply staging configuration on top of THAT, if need be
-      load_credentials("config/credentials/staging", env_names: %w[staging master], key_path: "config/credentials/staging.key") if configuration.staging?
+      if configuration.staging?
+        load_credentials(
+          "config/credentials/staging",
+          env_names: %w[staging master],
+          key_path: "config/credentials/staging.key",
+        )
+      end
     end
 
     # When the builder is done working, lock the configuration and return it
@@ -142,8 +156,19 @@ module Ravioli
           configuration.append(credentials)
           return credentials
         end
-      rescue => error
-        warn "Could not decrypt `#{path}.yml.enc' with key file `#{key_path}' or `ENV[\"#{env_name}\"]'", error, critical: false
+      rescue => e
+        error = e
+      end
+
+      if error
+        attempted_names = ["key file `#{key_path}'"]
+        attempted_names.push(*env_names.map { |env_name| "`ENV[\"#{env_name}\"]'" })
+        attempted_names = attempted_names.to_sentence(two_words_connector: " or ", last_word_connector: ", or ")
+        warn(
+          "Could not decrypt `#{path}.yml.enc' with #{attempted_names}",
+          error,
+          critical: false,
+        )
       end
 
       {}
