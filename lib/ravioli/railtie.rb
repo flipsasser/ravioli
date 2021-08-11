@@ -1,18 +1,8 @@
 # frozen_string_literal: true
 
 require_relative "./staging_inquirer"
-Rails.env.class.prepend Ravioli::StagingInquirer
 
 module Ravioli
-  class Engine < ::Rails::Engine
-    # Bootstrap Ravioli onto the Rails app
-    initializer "ravioli", before: :load_environment_config do |app|
-      Rails.extend Ravioli::RailsConfig unless Rails.respond_to?(:config)
-    end
-  end
-
-  private
-
   module RailsConfig
     def config
       Ravioli.default || Ravioli.build(namespace: Rails.application&.class&.module_parent, strict: Rails.env.production?) do |config|
@@ -21,5 +11,11 @@ module Ravioli
         config.auto_load_credentials!
       end
     end
+  end
+
+  class Railtie < ::Rails::Railtie
+    # Bootstrap Ravioli onto the Rails app
+    Rails.env.class.prepend Ravioli::StagingInquirer
+    Rails.extend Ravioli::RailsConfig unless Rails.respond_to?(:config)
   end
 end

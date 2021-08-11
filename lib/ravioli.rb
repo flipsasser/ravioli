@@ -40,4 +40,4 @@ module Ravioli
   end
 end
 
-require_relative "ravioli/engine" if defined?(Rails)
+require_relative "ravioli/railtie" if defined?(Rails)
