@@ -213,7 +213,7 @@ module Ravioli
         @reload_credentials.add(@current_credentials)
       end
 
-      configuration.fetch_env_key_for(args) { configuration.send(*args, &block) }
+      configuration.send(*args, &block)
     end
     # rubocop:enable Style/MissingRespondToMissing
     # rubocop:enable Style/MethodMissingSuper

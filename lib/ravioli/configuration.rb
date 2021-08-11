@@ -45,11 +45,6 @@ module Ravioli
       dig(*keys) || yield
     end
 
-    def fetch_env_key_for(keys, &block)
-      env_key = key_path_for(keys).join("_").upcase
-      ENV.fetch(env_key, &block)
-    end
-
     def pretty_print(printer = nil)
       table.pretty_print(printer)
     end
@@ -85,6 +80,11 @@ module Ravioli
       end
     end
 
+    def fetch_env_key_for(keys, &block)
+      env_key = key_path_for(keys).join("_").upcase
+      ENV.fetch(env_key, &block)
+    end
+
     def key_path_for(keys)
       Array(key_path) + Array(keys)
     end
@@ -92,9 +92,13 @@ module Ravioli
     # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(method, *args, &block)
+      return super unless args.empty?
+
       # Return proper booleans from query methods
-      return send(method.to_s.chomp("?")).present? if args.empty? && method.to_s.ends_with?("?")
-      super
+      return send(method.to_s.chomp("?")).present? if method.to_s.ends_with?("?")
+
+      # Try to find a matching ENV key
+      fetch_env_key_for(method) { super(method, *args, &block) }
     end
     # rubocop:enable Style/MissingRespondToMissing
     # rubocop:enable Style/MethodMissingSuper
