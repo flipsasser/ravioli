@@ -99,6 +99,7 @@ module Ravioli
       load_credentials(
         key_path: "config/master.key",
         env_names: %w[master root],
+        quiet: true,
       )
 
       # Load any environment-specific configuration on top of it. Since Rails will try
@@ -107,6 +108,7 @@ module Ravioli
         "config/credentials/#{Rails.env}",
         key_path: "config/credentials/#{Rails.env}.key",
         env_names: ["master"],
+        quiet: true,
       )
 
       # Apply staging configuration on top of THAT, if need be
@@ -115,6 +117,7 @@ module Ravioli
           "config/credentials/staging",
           env_names: %w[staging master],
           key_path: "config/credentials/staging.key",
+          quiet: true,
         )
       end
     end
@@ -145,11 +148,11 @@ module Ravioli
     end
 
     # Load secure credentials using a key either from a file or the ENV
-    def load_credentials(path = "credentials", key_path: path, env_names: path.split("/").last)
+    def load_credentials(path = "credentials", key_path: path, env_names: path.split("/").last, quiet: false)
       error = nil
       env_names = Array(env_names).map { |env_name| parse_env_name(env_name) }
       env_names.each do |env_name|
-        credentials = parse_credentials(path, env_name: env_name, key_path: key_path)
+        credentials = parse_credentials(path, env_name: env_name, key_path: key_path, quiet: quiet)
         if credentials.present?
           configuration.append(credentials)
           return credentials
@@ -262,14 +265,14 @@ module Ravioli
       env_name.match?(/^RAILS_/) ? env_name : "RAILS_#{env_name.upcase}_KEY"
     end
 
-    def parse_credentials(path, key_path: path, env_name: path.split("/").last)
+    def parse_credentials(path, key_path: path, env_name: path.split("/").last, quiet: false)
       @current_credentials = path
       env_name = parse_env_name(env_name)
       key_path = path_to_config_file_path(key_path, extnames: "key", quiet: true)
       options = {key_path: key_path.to_s}
       options[:env_key] = ENV[env_name].present? ? env_name : "__RAVIOLI__#{SecureRandom.hex(6)}"
 
-      path = path_to_config_file_path(path, extnames: "yml.enc")
+      path = path_to_config_file_path(path, extnames: "yml.enc", quiet: quiet)
       (Rails.application.encrypted(path, **options)&.config || {}).tap do
         @current_credentials = nil
       end
