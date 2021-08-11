@@ -38,6 +38,26 @@ describe("loadCredentials", () => {
     })
   })
 
+  it("fails env keys over until it finds one that works", () => {
+    process.env.RAILS_MASTER_KEY = readFileSync(
+      resolve(process.cwd(), "spec/fixtures/dummy/config/credentials/production.key"),
+    ).toString()
+    process.env.RAILS_ROOT_KEY = readFileSync(
+      resolve(process.cwd(), "spec/fixtures/dummy/config/master.key"),
+    ).toString()
+    expect(
+      loadCredentials("spec/fixtures/dummy/config/credentials.yml.enc", {
+        envKeys: ["master", "root"],
+        keyPath: "/nothing.key",
+      }),
+    ).to.deep.eq({
+      host: "http://localhost:3000/",
+      name: "Dummy McAppface",
+      secret_key_base:
+        "b097c3056fdf2dc7444172368fc94905c626e7d534fb684d3148672a67d1c706cb7f0c70354c3d1c66a3214318c523204d9903172c72daf846f5bdedfc551b52",
+    })
+  })
+
   it("loads the root credentials file with a full ENV key name", () => {
     process.env.RAILS_MASTER_KEY = readFileSync(
       resolve(process.cwd(), "spec/fixtures/dummy/config/master.key"),

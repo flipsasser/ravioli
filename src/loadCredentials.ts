@@ -1,4 +1,4 @@
-import { createCipheriv } from "crypto"
+import { createDecipheriv } from "crypto"
 import { existsSync, readFileSync } from "fs"
 
 import { parseYAML } from "./parseYAML"
@@ -17,26 +17,31 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
   if (!existsSync(path)) {
     return {}
   }
+  const contents = readFileSync(path, "ascii")
 
   // Determine which key to use - either an ENV variable or a file - and generate a secret from it
+  let decrypted: Buffer
   const { envKeys, keyPath } = options
-  let key = firstKeyFromEnv(envKeys)
-  if (!key) {
-    const keyFile = resolveConfigFilePath(keyPath, { extnames: "key" })
-    if (!existsSync(keyFile)) {
-      return {}
+  for (let key of envKeys) {
+    key = keyFromEnv(key)
+    if (key) {
+      decrypted = tryDecipher(contents, key)
+      if (decrypted) {
+        break
+      }
     }
-
-    key = readFileSync(keyFile, "ascii")
   }
 
-  // Load and decrypt the file using our key
-  const contents = readFileSync(path, "ascii")
-  const [data, iv, _] = contents.split("--").map(part => Buffer.from(part, "base64"))
+  if (!decrypted) {
+    const keyFile = resolveConfigFilePath(keyPath, { extnames: "key" })
+    if (existsSync(keyFile)) {
+      decrypted = tryDecipher(contents, readFileSync(keyFile, "ascii"))
+    }
+  }
 
-  const secret = Buffer.from(key, "hex")
-  const cipher = createCipheriv("aes-128-gcm", secret, iv)
-  let decrypted = Buffer.concat([cipher.update(data), cipher.final()])
+  if (!decrypted) {
+    return {}
+  }
 
   // Unmarshal a marshal'd Ruby string. The delimiter of a marshal'd string is a single '"'
   // character, so we pull everything between those two
@@ -67,18 +72,26 @@ export function loadCredentials(path: string, options?: LoadCredentialsOptions):
   return parseYAML(decrypted.toString()) || {}
 }
 
-function firstKeyFromEnv(keys: string[]): string {
-  if (!keys) {
+function keyFromEnv(key: string): string {
+  if (!key) {
     return
   }
 
-  keys = keys.reduce((reducedKeys, key) => {
-    if (key) {
-      reducedKeys.push(key && !/RAILS_/i.test(key) ? `RAILS_${key.toUpperCase()}_KEY` : key)
-    }
+  return process.env[!/RAILS_/i.test(key) ? `RAILS_${key.toUpperCase()}_KEY` : key]
+}
 
-    return reducedKeys
-  }, [] as string[])
+function tryDecipher(contents: string, key: string): Buffer {
+  // Load and decrypt the file using our key
+  const [data, iv, authTag] = contents.split("--").map(part => Buffer.from(part, "base64"))
 
-  return process.env[keys.find(key => process.env[key])]
+  const secret = Buffer.from(key, "hex")
+  const decipher = createDecipheriv("aes-128-gcm", secret, iv)
+  decipher.setAuthTag(authTag)
+
+  try {
+    const result = Buffer.concat([decipher.update(data), decipher.final()])
+    return result
+  } catch (e) {
+    return null
+  }
 }
