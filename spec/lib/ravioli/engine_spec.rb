@@ -5,6 +5,7 @@ require "rails_helper"
 RSpec.describe "Ravioli::Engine" do
   describe "auto-loading" do
     it "loads up all YAML, JSON, and encrypted credentials from `config/**/*`" do
+      ENV["DATABASE_URL"] = "db/example.sqlite3"
       expect(Rails.config).to eq(build(
         staging: false,
         nested: {
@@ -44,6 +45,7 @@ RSpec.describe "Ravioli::Engine" do
           pool: 5,
           timeout: 5000,
           database: "db/test.sqlite3",
+          url: "db/example.sqlite3",
         },
         yml_test: {
           whatever: true,

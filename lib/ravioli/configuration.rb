@@ -45,6 +45,11 @@ module Ravioli
       dig(*keys) || yield
     end
 
+    def fetch_env_key_for(keys, &block)
+      env_key = key_path_for(keys).join("_").upcase
+      ENV.fetch(env_key, &block)
+    end
+
     def pretty_print(printer = nil)
       table.pretty_print(printer)
     end
@@ -78,11 +83,6 @@ module Ravioli
           end
         }
       end
-    end
-
-    def fetch_env_key_for(keys, &block)
-      env_key = key_path_for(keys).join("_").upcase
-      ENV.fetch(env_key, &block)
     end
 
     def key_path_for(keys)
