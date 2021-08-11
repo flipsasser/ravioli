@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require_relative "./staging_inquirer"
+Rails.env.class.prepend Ravioli::StagingInquirer
+
 module Ravioli
   class Engine < ::Rails::Engine
     # Bootstrap Ravioli onto the Rails app

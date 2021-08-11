@@ -79,10 +79,8 @@ module Ravioli
     #
     # @param is_staging [boolean, #present?] whether or not the current environment is considered a staging environment
     def add_staging_flag!(is_staging = Rails.env.production? && ENV["STAGING"].present?)
-      require_relative "./staging_inquirer"
       is_staging = is_staging.present?
       configuration.staging = is_staging
-      Rails.env.class.prepend Ravioli::StagingInquirer
     end
 
     # Iterates through the config directory (including nested folders) and
