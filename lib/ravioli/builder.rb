@@ -140,8 +140,8 @@ module Ravioli
     end
 
     # Load a file either with a given path or by name (e.g. `config/whatever.yml` or `:whatever`)
-    def load_file(path, options = {})
-      config = parse_config_file(path, options)
+    def load_file(path, **options)
+      config = parse_config_file(path, **options)
       configuration.append(config) if config.present?
     rescue => error
       warn "Could not load config file #{path}", error
@@ -221,10 +221,9 @@ module Ravioli
     # rubocop:enable Style/MissingRespondToMissing
     # rubocop:enable Style/MethodMissingSuper
 
-    def parse_config_file(path, options = {})
+    def parse_config_file(path, **options)
       # Stash a reference to the file we're parsing, so we can reload it later if it tries to use
       # the configuration object
-      @current_path = path
       path = path_to_config_file_path(path)
 
       config = case path.extname.downcase
@@ -286,7 +285,7 @@ module Ravioli
     def parse_yaml_config_file(path)
       contents = File.read(path)
       erb = ERB.new(contents).tap { |renderer| renderer.filename = path.to_s }
-      YAML.safe_load(erb.result, [Symbol], aliases: true)
+      YAML.safe_load(erb.result, permitted_classes: [Symbol], aliases: true)
     end
 
     def path_to_config_file_path(path, extnames: EXTNAMES, quiet: false)
