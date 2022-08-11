@@ -28,6 +28,7 @@ describe("default", () => {
               database: "db/test.sqlite3",
               pool: '<%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>',
               timeout: 5000,
+              url: "<%= Rails.config.database_url %>",
             },
             host: "http://test.local",
             jsonEnvTest: {
