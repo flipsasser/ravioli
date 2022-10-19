@@ -67,7 +67,9 @@ module Ravioli
     def cast(key, value)
       if value.is_a?(Hash)
         original_value = dig(*Array(key))
-        value = original_value.table.deep_merge(value.deep_symbolize_keys) if original_value.is_a?(self.class)
+        transform = ->(value) { value.is_a?(self.class) ? value.table.deep_transform_values(&transform) : value }
+        original_value = original_value.table.deep_transform_values(&transform) if original_value.is_a?(self.class)
+        value = original_value.deep_merge(value.deep_symbolize_keys) if original_value.is_a?(Hash)
         build(key, value)
       else
         fetch_env_key_for(key) {
@@ -89,7 +91,6 @@ module Ravioli
       Array(key_path) + Array(keys)
     end
 
-    # rubocop:disable Style/MethodMissingSuper
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(method, *args, &block)
       return super unless args.empty?
