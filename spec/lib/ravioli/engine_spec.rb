@@ -29,11 +29,11 @@ RSpec.describe "Ravioli::Engine" do
         storage: {
           test: {
             service: "Disk",
-            root: "/Users/flip/Monti/ravioli/spec/fixtures/dummy/tmp/storage",
+            root: "/Users/flip/Projects/ravioli/spec/fixtures/dummy/tmp/storage",
           },
           local: {
             service: "Disk",
-            root: "/Users/flip/Monti/ravioli/spec/fixtures/dummy/storage",
+            root: "/Users/flip/Projects/ravioli/spec/fixtures/dummy/storage",
           },
         },
         yml_env_test: {
