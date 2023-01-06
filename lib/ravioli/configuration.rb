@@ -91,6 +91,14 @@ module Ravioli
       Array(key_path) + Array(keys)
     end
 
+    # Ruby 3's OStruct doesn't protect the `class` method ... which is dumb. Let's protect all
+    # public instance methods; this will just prevent reader attrs from being written. Things are
+    # still accessible via hash notation, e.g. `Rails.config[:class]`
+    def is_method_protected!(name)
+      return true if singleton_class.method_defined?(name)
+      super
+    end
+
     # rubocop:disable Style/MissingRespondToMissing
     def method_missing(method, *args, &block)
       return super unless args.empty?

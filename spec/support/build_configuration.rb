@@ -15,6 +15,7 @@ RSpec.configure do |config|
   config.include BuildConfiguration
 
   config.before do
+    ENV["RAILS_MASTER_KEY"] = nil
     ENV["STAGING"] = nil
     Ravioli.configurations.clear
   end

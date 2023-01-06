@@ -6,7 +6,7 @@ RSpec.describe "Ravioli::Engine" do
   describe "auto-loading" do
     it "loads up all YAML, JSON, and encrypted credentials from `config/**/*`" do
       ENV["DATABASE_URL"] = "db/example.sqlite3"
-      expect(Rails.config).to eq(build(
+      expect(Rails.config).to eq(Rails.config.class.new(
         staging: false,
         nested: {
           things: [
@@ -26,14 +26,30 @@ RSpec.describe "Ravioli::Engine" do
         cable: {
           adapter: "test",
         },
+        reserved_names: {
+          apiVersion: "cert-manager.io/v1",
+               :kind=>"ClusterIssuer",
+               :metadata=>{:name=>"letsencrypt"},
+               :spec =>
+                {:acme=>
+                  {:server=>"https://acme-v02.api.letsencrypt.org/directory",
+                   :privateKeySecretRef=>{:name=>"letsencrypt"},
+                   :solvers=>
+                    [{:http01=>
+                       {:ingress=>
+                         {:class=>"nginx",
+                          :podTemplate=>
+                           {:spec=>{:nodeSelector=>{:"kubernetes.io/os"=>"linux"}}}}}}]}},
+        },
+
         storage: {
           test: {
             service: "Disk",
-            root: "/Users/flip/Projects/ravioli/spec/fixtures/dummy/tmp/storage",
+            root: Rails.root.join("tmp", "storage").to_s,
           },
           local: {
             service: "Disk",
-            root: "/Users/flip/Projects/ravioli/spec/fixtures/dummy/storage",
+            root: Rails.root.join("storage").to_s,
           },
         },
         yml_env_test: {
