@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     ravioli (0.2.5)
-      activesupport (< 7.2)
+      activesupport (>= 7.0, < 7.2)
 
 GEM
   remote: https://rubygems.org/
@@ -293,7 +293,7 @@ DEPENDENCIES
   guard-rspec
   guard-rubocop
   pry
-  rails (< 7.2)
+  rails (>= 7.0, < 7.2)
   ravioli!
   rspec (~> 3.9)
   rspec-rails
