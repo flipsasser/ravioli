@@ -27,13 +27,13 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "activesupport", ">= 7.0", "< 7.3"
+  spec.add_dependency "activesupport", ">= 7.0"
 
   spec.add_development_dependency "guard"
   spec.add_development_dependency "guard-rspec"
   spec.add_development_dependency "guard-rubocop"
   spec.add_development_dependency "pry"
-  spec.add_development_dependency "rails", ">= 7.0", "< 7.3"
+  spec.add_development_dependency "rails", ">= 7.0"
   spec.add_development_dependency "rspec", "~> 3.9"
   spec.add_development_dependency "rspec-rails"
   spec.add_development_dependency "rubocop", ">= 1.0"
