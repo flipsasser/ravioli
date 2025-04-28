@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ravioli (0.2.6)
+    ravioli (0.2.7)
       activesupport (>= 7.0)
 
 GEM
